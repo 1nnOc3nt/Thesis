@@ -1,5 +1,4 @@
 #pragma once
-#include "Info.h"
 #include "Loader.h"
 #include "Hook.h"
 

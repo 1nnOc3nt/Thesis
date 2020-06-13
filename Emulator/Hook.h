@@ -1,6 +1,5 @@
 #pragma once
-#include "Info.h"
-#include "Dll.h"
+#include "API.h"
 
 struct CacheIns
 {
@@ -11,6 +10,6 @@ struct CacheIns
 
 extern CacheIns _cache;
 extern BOOL _isCached;
-extern int tabSize;
+extern int _tabSize;
 
 void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data);

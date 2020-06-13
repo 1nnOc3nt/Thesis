@@ -7,12 +7,12 @@ AnalyzeFile::AnalyzeFile(TCHAR* filePath, TCHAR* arg)
 	loader = new Loader(filePath, arg);
 }
 
-/*---------------------------------------------Emulate Code----------------------S---------------------*/
+/*---------------------------------------------Emulate Code-------------------------------------------*/
 int AnalyzeFile::StartAnalyze()
 {
 	uc_err err;
 	
-	_tprintf(TEXT("[*] Analyzing: %s\n"), filePath);
+	_tprintf("[*] Analyzing: %s\n", filePath);
 
 	//Load PE & setup environment
 	if (loader->Load(uc))
@@ -28,7 +28,7 @@ int AnalyzeFile::StartAnalyze()
 		HandleUcError(err);
 
 
-	_tprintf(TEXT("[*] Done!\n"));
+	_tprintf("[*] Done!\n");
 	return 0;
 }
 

@@ -44,7 +44,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -155,23 +155,33 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnalyzeFile.cpp" />
-    <ClCompile Include="Arch.cpp" />
+    <ClCompile Include="API.cpp" />
     <ClCompile Include="Dll.cpp" />
     <ClCompile Include="Emulator.cpp" />
+    <ClCompile Include="GDT.cpp" />
+    <ClCompile Include="Header.cpp" />
+    <ClCompile Include="Heap.cpp" />
     <ClCompile Include="Hook.cpp" />
-    <ClCompile Include="Info.cpp" />
+    <ClCompile Include="Kernel.cpp" />
     <ClCompile Include="Loader.cpp" />
     <ClCompile Include="PE.cpp" />
+    <ClCompile Include="TIB.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnalyzeFile.h" />
-    <ClInclude Include="Arch.h" />
+    <ClInclude Include="API.h" />
     <ClInclude Include="Dll.h" />
     <ClInclude Include="Emulator.h" />
+    <ClInclude Include="GDT.h" />
+    <ClInclude Include="Heap.h" />
     <ClInclude Include="Hook.h" />
-    <ClInclude Include="Info.h" />
+    <ClInclude Include="Header.h" />
+    <ClInclude Include="Kernel.h" />
     <ClInclude Include="Loader.h" />
     <ClInclude Include="PE.h" />
+    <ClInclude Include="TIB.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

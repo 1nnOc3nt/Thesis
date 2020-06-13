@@ -1,8 +1,9 @@
 #pragma once
-#include "PE.h"
+#include "GDT.h"
+#include "TIB.h"
 #include "Dll.h"
-
-DWORD LoadDll(uc_engine* uc, TCHAR* dllName);
+#include "Heap.h"
+#include "API.h"
 
 class Loader
 {
@@ -14,9 +15,7 @@ class Loader
 		DWORD sizeOfImage;
 		LPVOID memMap;
 		PE* pe;
-		//void SetCmdLine(uc_engine* uc);
 		void ResolveIAT(uc_engine* uc);
-		//void SetupWin32(uc_engine* uc);
 	public:
 		Loader(TCHAR* filePath, TCHAR* arg=NULL);
 		int Load(uc_engine*& uc);

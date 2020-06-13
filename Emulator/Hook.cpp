@@ -2,7 +2,7 @@
 
 CacheIns _cache;
 BOOL _isCached = FALSE;
-int tabSize = 0;
+int _tabSize = 0;
 
 void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 {
@@ -27,17 +27,69 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 			if (_isCached)
 			{
 				if ((symbols.find((DWORD)insn[i].address) != symbols.end()))
-					//Check emulated API
-					_tprintf("0x%llX: %s\t%s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
-					//Hook API
+				{
+					map<TCHAR*, Func>::iterator iterate;
+
+					if (!strcmp(_cache.mnemonic, "call"))
+					{
+						_tprintf("---------------------------------------\n");
+
+						for (int j = 0; j < _tabSize - 1; j++)
+							_tprintf("   |   ");
+						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+						iterate = api.begin();
+						while (iterate != api.end())
+						{
+							if (!strcmp(iterate->first, symbols[(DWORD)insn[i].address]))
+							{
+								iterate->second(uc);
+							}
+							iterate++;
+						}
+
+						for (int j = 0; j < _tabSize - 1; j++)
+							_tprintf("   |   ");
+						_tprintf("---------------------------------------\n");
+					}
+					else
+					{
+						_tprintf("---------------------------------------\n");
+
+						for (int j = 0; j < _tabSize; j++)
+							_tprintf("   |   ");
+						_tprintf("0x%llX: %s %s", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+
+						for (int j = 0; j < _tabSize; j++)
+							_tprintf("   |   ");
+						_tprintf("---------------------------------------\n");
+					}
+				}
 				else
-					//Print default arguments
-					_tprintf("0x%llX: %s\t%s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+				{	//Print default arguments
+					if (!strcmp(_cache.mnemonic, "call"))
+					{
+						getStack(uc, _tabSize - 1);
+						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+
+						for (int j = 0; j < _tabSize - 1; j++)
+							_tprintf("   |   ");
+						_tprintf("---------------------------------------\n");
+					}
+					else
+					{
+						getStack(uc, _tabSize);
+						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+
+						for (int j = 0; j < _tabSize; j++)
+							_tprintf("   |   ");
+						_tprintf("---------------------------------------\n");
+					}
+				}
 			}
 
 			if (!strcmp(insn[i].mnemonic, "call") || !strcmp(insn[i].mnemonic, "jmp"))
 			{
-				for (int j = 0; j < tabSize; j++)
+				for (int j = 0; j < _tabSize; j++)
 					_tprintf("   |   ");
 
 				_cache.address = insn[i].address;
@@ -45,12 +97,12 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 				_cache.op_str = insn[i].op_str;
 				_isCached = TRUE;
 				if (!strcmp(insn[i].mnemonic, "call"))
-					tabSize++;
+					_tabSize++;
 			}
 			else if (strstr(insn[i].mnemonic, "ret"))
 			{
 				_isCached = FALSE;
-				tabSize--;
+				_tabSize--;
 			}
 			else
 				_isCached = FALSE;
