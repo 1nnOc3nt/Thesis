@@ -3,9 +3,12 @@
 CacheIns _cache;
 BOOL _isCached = FALSE;
 int _tabSize = 0;
+BOOL _printAsm = FALSE;
+BOOL _printReg = FALSE;
 
 void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 {
+	TCHAR buffer[MAX_PATH] = { 0 };
 	csh cs;
 	cs_insn* insn;
 	size_t count = 0;
@@ -24,74 +27,169 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 	{
 		for (int i = 0; i < count; i++)
 		{
+			if (_numberOfArguments != 0)
+			{
+				CleanupStack(uc, _numberOfArguments);
+				_numberOfArguments = 0;
+			}
+
 			if (_isCached)
 			{
+				if (_printReg)
+				{
+					if (!strcmp(_cache.mnemonic, "call"))
+						getRegistries(uc, _tabSize - 1);
+					else
+						getRegistries(uc, _tabSize);
+				}
+
 				if ((symbols.find((DWORD)insn[i].address) != symbols.end()))
 				{
 					map<TCHAR*, Func>::iterator iterate;
 
 					if (!strcmp(_cache.mnemonic, "call"))
 					{
-						_tprintf("---------------------------------------\n");
+						for (int j = 0; j < _tabSize - 1; j++)
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 
 						for (int j = 0; j < _tabSize - 1; j++)
-							_tprintf("   |   ");
-						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
 						iterate = api.begin();
 						while (iterate != api.end())
 						{
 							if (!strcmp(iterate->first, symbols[(DWORD)insn[i].address]))
 							{
-								iterate->second(uc);
+								iterate->second(uc, _tabSize - 1);
 							}
 							iterate++;
 						}
 
 						for (int j = 0; j < _tabSize - 1; j++)
-							_tprintf("   |   ");
-						_tprintf("---------------------------------------\n");
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 					else
 					{
-						_tprintf("---------------------------------------\n");
+						for (int j = 0; j < _tabSize; j++)
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 
 						for (int j = 0; j < _tabSize; j++)
-							_tprintf("   |   ");
-						_tprintf("0x%llX: %s %s", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
+						iterate = api.begin();
+						while (iterate != api.end())
+						{
+							if (!strcmp(iterate->first, symbols[(DWORD)insn[i].address]))
+							{
+								iterate->second(uc, _tabSize);
+							}
+							iterate++;
+						}
 
 						for (int j = 0; j < _tabSize; j++)
-							_tprintf("   |   ");
-						_tprintf("---------------------------------------\n");
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 				}
 				else
-				{	//Print default arguments
+				{
+					if (!strcmp(_cache.mnemonic, "call") || !strcmp(_cache.mnemonic, "jmp"))
+					{
+						TCHAR* tempCache = new TCHAR[MAX_PATH];
+						ZeroMemory(tempCache, MAX_PATH);
+						if (!strcmp(_cache.op_str, "eax"))
+						{
+							DWORD eax = 0;
+							eax = getEAX(uc);
+							_stprintf(tempCache, "eax -> 0x%lX", eax);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "ebx"))
+						{
+							DWORD ebx = 0;
+							ebx = getEBX(uc);
+							_stprintf(tempCache, "ebx -> 0x%lX", ebx);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "ecx"))
+						{
+							DWORD ecx = 0;
+							ecx = getECX(uc);
+							_stprintf(tempCache, "ecx -> 0x%lX", ecx);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "edx"))
+						{
+							DWORD edx = 0;
+							edx = getEDX(uc);
+							_stprintf(tempCache, "edx -> 0x%lX", edx);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "ebp"))
+						{
+							DWORD ebp = 0;
+							ebp = getEBP(uc);
+							_stprintf(tempCache, "ebp -> 0x%lX", ebp);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "esi"))
+						{
+							DWORD esi = 0;
+							esi = getESI(uc);
+							_stprintf(tempCache, "esi -> 0x%lX", esi);
+							_cache.op_str = tempCache;
+						}
+						else if (!strcmp(_cache.op_str, "edi"))
+						{
+							DWORD edi = 0;
+							edi = getEDI(uc);
+							_stprintf(tempCache, "edi -> 0x%lX", edi);
+							_cache.op_str = tempCache;
+						}
+					}
+
 					if (!strcmp(_cache.mnemonic, "call"))
 					{
 						getStack(uc, _tabSize - 1);
-						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
 
 						for (int j = 0; j < _tabSize - 1; j++)
-							_tprintf("   |   ");
-						_tprintf("---------------------------------------\n");
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+					}
+					else if (!strcmp(_cache.mnemonic, "jmp"))
+					{
+						for (int j = 0; j < _tabSize; j++)
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						for (int j = 0; j < _tabSize; j++)
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+
+						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
+
+						for (int j = 0; j < _tabSize; j++)
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 					else
 					{
-						getStack(uc, _tabSize);
-						_tprintf("0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
-
 						for (int j = 0; j < _tabSize; j++)
-							_tprintf("   |   ");
-						_tprintf("---------------------------------------\n");
+							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
+						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
 					}
 				}
 			}
 
 			if (!strcmp(insn[i].mnemonic, "call") || !strcmp(insn[i].mnemonic, "jmp"))
 			{
-				for (int j = 0; j < _tabSize; j++)
-					_tprintf("   |   ");
-
 				_cache.address = insn[i].address;
 				_cache.mnemonic = insn[i].mnemonic;
 				_cache.op_str = insn[i].op_str;
@@ -99,17 +197,38 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 				if (!strcmp(insn[i].mnemonic, "call"))
 					_tabSize++;
 			}
-			else if (strstr(insn[i].mnemonic, "ret"))
-			{
-				_isCached = FALSE;
-				_tabSize--;
-			}
 			else
-				_isCached = FALSE;
+			{
+				if (_printAsm )
+				{
+					if (strstr(insn[i].mnemonic, "ret"))
+					{
+						_isCached = FALSE;
+						_tabSize--;
+					}
+					else
+					{
+						_cache.address = insn[i].address;
+						_cache.mnemonic = insn[i].mnemonic;
+						_cache.op_str = insn[i].op_str;
+						_isCached = TRUE;
+					}
+				}
+				else
+				{
+					if (strstr(insn[i].mnemonic, "ret"))
+						_tabSize--;
+					_isCached = FALSE;
+				}
+			}
 		}
 	}
 	else
-		_tprintf("[!] Failed to disassemble given code!\n");
+	{
+		err = uc_emu_stop(uc);
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+	}
 	delete[] code;
 	cs_close(&cs);
 }

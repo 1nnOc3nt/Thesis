@@ -37,7 +37,7 @@ DWORD NewHeap(uc_engine* uc, DWORD heapSize)
 		map<DWORD, DWORD>::iterator iterate2;
 
 		iterate1 = heap.begin();
-		iterate2 = heap.begin()++;
+		iterate2 = ++heap.begin();
 		
 		if (heap.size() == 1)
 		{
@@ -99,9 +99,13 @@ DWORD NewHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 void DeleteHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 {
 	uc_err err;
+	TCHAR buffer[MAX_PATH] = { 0 };
 
 	if (heap.find(heapAddress) == heap.end())
-		_tprintf("[!] Error: Given address is not in Heap!\n");
+	{
+		_stprintf(buffer, "[!] Error: Given address is not in Heap!\n");
+		UcPrint(buffer);
+	}
 	else
 	{
 		if (heapSize == heap[heapAddress])

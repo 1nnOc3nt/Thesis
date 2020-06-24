@@ -1,8 +1,10 @@
 #include "Dll.h"
 
 DWORD _dllLastAddr = 0x70000000;
+DWORD _numbersOfFunc = 0;
 
 map<DWORD, TCHAR*>symbols;
+map<DWORD, DWORD>loadInOrderFuncs;
 map<TCHAR*, DWORD>loadedDll;
 
 DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
@@ -20,9 +22,21 @@ DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 	PDWORD names = NULL;
 	PWORD ordinal = NULL;
 
+	for (size_t i = 0; i < strlen(dllName); i++)
+		dllName[i] = tolower(dllName[i]);
+
+	if (strcmp(PathFindExtension(dllName), ".dll"))
+		strcat(dllName, ".dll");
+
 	//Check if Dll is loaded
-	if (loadedDll.find(dllName) != loadedDll.end())
-		return loadedDll[dllName];
+	map<TCHAR*, DWORD>::iterator iterate;
+	iterate = loadedDll.begin();
+	while (iterate != loadedDll.end())
+	{
+		if (!strcmp(iterate->first, dllName))
+			return iterate->second;
+		iterate++;
+	}
 
 	//Get Dll path
 	strcat(dllPath, _fileDir);
@@ -39,6 +53,33 @@ DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 		strcat(dllPath, dllName);
 	}
 
+	if (!PathFileExists(dllPath))
+	{
+		////Allocate memory for Dll in emulator
+		//err = uc_mem_map(uc, dllBase, 0x1000, UC_PROT_ALL);
+		//if (err != UC_ERR_OK)
+		//	HandleUcError(err);
+
+		////Write ret into emulator memory
+		//for (size_t i = 0; i < 0x1000; i++)
+		//{
+		//	CHAR ret = 0xc3;
+		//	err = uc_mem_write(uc, dllBase+i, &ret, sizeof(CHAR));
+		//	if (err != UC_ERR_OK)
+		//		HandleUcError(err);
+		//}
+
+		////Update last Dll address
+		//_dllLastAddr += 0x1000;
+
+		////Add Dll to LDR
+		//AddToLDR(uc, _lastStructureAddress, dllBase, dllBase, 0x1000, dllPath, dllName);
+		//_lastStructureAddress += getLDRDataSize();
+
+		//return dllBase;
+		return 0;
+	}
+	
 	//Get Dll data
 	dll = new PE(dllPath);
 	memMap = dll->getData();
@@ -68,17 +109,21 @@ DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 	//Resolve export
 	for (size_t i = 0; i < numberOfFuncs; i++)
 	{
-		TCHAR ord[2] = { 0 };
-		ord[0] = '1' + i;
+		TCHAR* ord = new TCHAR[MAX_PATH];
+		ZeroMemory(ord, MAX_PATH);
+		_stprintf(ord, "%s_ordinal_0x%lX", dllName, i + 1);
 		TCHAR* funcName = ord;
 		for (size_t j = 0; j < numberOfNames; j++)
 		{
 			if (ordinal[j] == i)
 			{
+				delete[] ord;
 				funcName = (TCHAR*)(PDWORD)((DWORD)memMap + names[j]);
+				break;
 			}
 		}
 		symbols[dllBase + address[i]] = funcName;
+		loadInOrderFuncs[_numbersOfFunc++] = dllBase + address[i];
 		//Replace function with ret
 		err = uc_mem_write(uc, (DWORD)(dllBase + address[i]), retdata, sizeof(retdata));
 		if (err != UC_ERR_OK)
@@ -97,4 +142,12 @@ DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 
 	delete dll;
 	return dllBase;
+}
+
+void UcSetLastError(uc_engine* uc, DWORD errorCode)
+{
+	uc_err err;
+	err = uc_mem_write(uc, 0x6034, &errorCode, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
 }

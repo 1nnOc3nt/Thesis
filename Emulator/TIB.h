@@ -6,7 +6,7 @@ extern DWORD _LDRHead;
 extern DWORD _lastLDRDataAddress;
 extern DWORD _LDRDataSize;
 
-void InitTIB(uc_engine* uc, DWORD stackBase, DWORD stackLimit, DWORD TIBAddress, DWORD PEBAddress);
+void InitTIB(uc_engine* uc, DWORD exceptionList, DWORD stackBase, DWORD stackLimit, DWORD TIBAddress, DWORD PEBAddress);
 DWORD getTIBSize();
 void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg = NULL);
 void InitPEB(uc_engine* uc, DWORD PEBAddress, DWORD LDRAddress, DWORD processParam, DWORD processHeap);

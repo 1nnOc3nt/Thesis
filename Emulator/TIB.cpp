@@ -5,9 +5,13 @@ DWORD _LDRHead = 0;
 DWORD _lastLDRDataAddress = 0;
 DWORD _LDRDataSize = 0;
 
-void InitTIB(uc_engine* uc, DWORD stackBase, DWORD stackLimit, DWORD TIBAddress, DWORD PEBAddress)
+void InitTIB(uc_engine* uc, DWORD exceptionList, DWORD stackBase, DWORD stackLimit, DWORD TIBAddress, DWORD PEBAddress)
 {
 	uc_err err;
+
+	err = uc_mem_write(uc, TIBAddress, &exceptionList, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
 
 	err = uc_mem_write(uc, TIBAddress + 0x4, &stackBase, sizeof(DWORD));
 	if (err != UC_ERR_OK)
@@ -161,9 +165,9 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
-	err = uc_mem_write(uc, LDRDataAddress + 0x10, &_LDRHead, sizeof(DWORD));
+	/*err = uc_mem_write(uc, LDRDataAddress + 0x10, &_LDRHead, sizeof(DWORD));
 	if (err != UC_ERR_OK)
-		HandleUcErrorVoid(err);
+		HandleUcErrorVoid(err);*/
 
 	//Blink
 	err = uc_mem_write(uc, LDRDataAddress + 0x4, &_lastLDRDataAddress, sizeof(DWORD));
@@ -174,9 +178,9 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
-	err = uc_mem_write(uc, LDRDataAddress + 0x14, &_lastLDRDataAddress, sizeof(DWORD));
+	/*err = uc_mem_write(uc, LDRDataAddress + 0x14, &_lastLDRDataAddress, sizeof(DWORD));
 	if (err != UC_ERR_OK)
-		HandleUcErrorVoid(err);
+		HandleUcErrorVoid(err);*/
 
 	//Update LDRHead Blink
 	err = uc_mem_write(uc, _LDRHead + 0x4, &LDRDataAddress, sizeof(DWORD));
@@ -187,9 +191,9 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
-	err = uc_mem_write(uc, _LDRHead + 0x14, &LDRDataAddress, sizeof(DWORD));
+	/*err = uc_mem_write(uc, _LDRHead + 0x14, &LDRDataAddress, sizeof(DWORD));
 	if (err != UC_ERR_OK)
-		HandleUcErrorVoid(err);
+		HandleUcErrorVoid(err);*/
 
 	//Update last LDRData Flink
 	err = uc_mem_write(uc, _lastLDRDataAddress, &LDRDataAddress, sizeof(DWORD));
@@ -200,22 +204,22 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
-	err = uc_mem_write(uc, _lastLDRDataAddress + 0x10, &LDRDataAddress, sizeof(DWORD));
+	/*err = uc_mem_write(uc, _lastLDRDataAddress + 0x10, &LDRDataAddress, sizeof(DWORD));
 	if (err != UC_ERR_OK)
-		HandleUcErrorVoid(err);
+		HandleUcErrorVoid(err);*/
 
 	//DllBase
-	err = uc_mem_write(uc, LDRDataAddress + 0x18, &dllBase, sizeof(DWORD));
+	err = uc_mem_write(uc, LDRDataAddress + 0x10, &dllBase, sizeof(DWORD));
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
 	//EntryPoint
-	err = uc_mem_write(uc, LDRDataAddress + 0x1c, &entryPoint, sizeof(DWORD));
+	err = uc_mem_write(uc, LDRDataAddress + 0x14, &entryPoint, sizeof(DWORD));
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
 	//SizeOfImage
-	err = uc_mem_write(uc, LDRDataAddress + 0x20, &sizeOfImage, sizeof(DWORD));
+	err = uc_mem_write(uc, LDRDataAddress + 0x18, &sizeOfImage, sizeof(DWORD));
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 	
@@ -225,7 +229,34 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 	if (fullDllName != NULL)
 	{
 		nameLen = mbstowcs(fullDllNameW, fullDllName, strlen(fullDllName));
-		maxNameLen = nameLen + 4;
+		nameLen = nameLen * 2;
+		maxNameLen = nameLen + 2;
+
+		err = uc_mem_write(uc, LDRDataAddress + 0x1c, &nameLen, sizeof(WORD));
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+
+		err = uc_mem_write(uc, LDRDataAddress + 0x1e, &maxNameLen, sizeof(WORD));
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+
+		err = uc_mem_write(uc, LDRDataAddress + 0x20, &dllNameAddress, sizeof(DWORD));
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+
+		err = uc_mem_write(uc, dllNameAddress, fullDllNameW, nameLen);
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+
+		dllNameAddress += maxNameLen;
+	}
+
+	//BaseDllName
+	if (baseDllName != NULL)
+	{
+		nameLen = mbstowcs(baseDllNameW, baseDllName, strlen(baseDllName));
+		nameLen = nameLen * 2;
+		maxNameLen = nameLen + 2;
 
 		err = uc_mem_write(uc, LDRDataAddress + 0x24, &nameLen, sizeof(WORD));
 		if (err != UC_ERR_OK)
@@ -239,36 +270,11 @@ void AddToLDR(uc_engine* uc, DWORD LDRDataAddress, DWORD dllBase, DWORD entryPoi
 		if (err != UC_ERR_OK)
 			HandleUcErrorVoid(err);
 
-		err = uc_mem_write(uc, dllNameAddress, fullDllNameW, (nameLen+1)*2);
+		err = uc_mem_write(uc, dllNameAddress, baseDllNameW, nameLen);
 		if (err != UC_ERR_OK)
 			HandleUcErrorVoid(err);
 
-		dllNameAddress += maxNameLen*2;
-	}
-
-	//BaseDllName
-	if (baseDllName != NULL)
-	{
-		nameLen = mbstowcs(baseDllNameW, baseDllName, strlen(baseDllName));
-		maxNameLen = nameLen + 4;
-
-		err = uc_mem_write(uc, LDRDataAddress + 0x2c, &nameLen, sizeof(WORD));
-		if (err != UC_ERR_OK)
-			HandleUcErrorVoid(err);
-
-		err = uc_mem_write(uc, LDRDataAddress + 0x2e, &maxNameLen, sizeof(WORD));
-		if (err != UC_ERR_OK)
-			HandleUcErrorVoid(err);
-
-		err = uc_mem_write(uc, LDRDataAddress + 0x30, &dllNameAddress, sizeof(DWORD));
-		if (err != UC_ERR_OK)
-			HandleUcErrorVoid(err);
-
-		err = uc_mem_write(uc, dllNameAddress, baseDllNameW, (nameLen + 1) * 2);
-		if (err != UC_ERR_OK)
-			HandleUcErrorVoid(err);
-
-		_LDRDataSize = dllNameAddress + maxNameLen * 2;
+		_LDRDataSize = dllNameAddress + maxNameLen - LDRDataAddress;
 	}
 
 	_lastLDRDataAddress = LDRDataAddress;

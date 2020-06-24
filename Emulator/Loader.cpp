@@ -19,6 +19,19 @@ Loader::Loader(TCHAR* filePath, TCHAR* arg)
 	}
 	PathRemoveFileSpec(_fileDir);
 	strcat(_fileDir, "\\");
+
+	TCHAR fileName[MAX_PATH] = { 0 };
+	TCHAR temp[MAX_PATH] = { 0 };
+	
+	time_t my_time = time(NULL);
+	tm* ltm = localtime(&my_time);
+
+	strcat(temp, _fileName);
+	PathRemoveExtension(temp);
+	_stprintf(fileName, "%s_%d_%d_%d_%d_%d_%d.txt", temp, ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
+
+	_outFile = CreateFile(fileName, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
 	imageBase = 0;
 	entryPoint = 0;
 	sizeOfImage = 0;
@@ -35,7 +48,11 @@ void Loader::ResolveIAT(uc_engine* uc)
 	DWORD dwFTTemp = 0;
 	DWORD dwThunk = 0;
 	map<DWORD, TCHAR*>::iterator iterate;
+	map<DWORD, DWORD>::iterator iterate1;
 	uc_err err;
+
+	if (dwImportVA == 0)
+		return;
 
 	while (((PIMAGE_IMPORT_DESCRIPTOR)dwImportVA)->Name)
 	{
@@ -43,7 +60,10 @@ void Loader::ResolveIAT(uc_engine* uc)
 		libName = (TCHAR*)((DWORD)memMap + ((PIMAGE_IMPORT_DESCRIPTOR)dwImportVA)->Name);
 
 		//Load Dll
-		LoadDll(uc, libName);
+		DWORD dllBase = LoadDll(uc, libName);
+
+		if (dllBase == 0)
+			continue;
 
 		//Get First Thunk
 		dwFT = (DWORD)imageBase + ((PIMAGE_IMPORT_DESCRIPTOR)dwImportVA)->FirstThunk;
@@ -53,18 +73,45 @@ void Loader::ResolveIAT(uc_engine* uc)
 		while (*(DWORD*)dwFTTemp)
 		{
 			dwThunk = (DWORD)memMap + *(DWORD*)dwFTTemp;
-			//Get function name
-			TCHAR* funcName = (TCHAR*)((PIMAGE_IMPORT_BY_NAME)dwThunk)->Name;
-			//Get function address
-			iterate = symbols.begin();
-			while (iterate != symbols.end())
-			{
-				if (!strcmp(iterate->second, funcName))
+			if (dwThunk <= _dllLastAddr)
+			{	//Get function name
+				TCHAR* funcName = (TCHAR*)((PIMAGE_IMPORT_BY_NAME)dwThunk)->Name;
+				//Get function address
+				iterate = symbols.begin();
+				while (iterate != symbols.end())
 				{
-					err = uc_mem_write(uc, dwFT, (PVOID)&iterate->first, sizeof(DWORD));
-					break;
+					if (!strcmp(iterate->second, funcName))
+					{
+						err = uc_mem_write(uc, dwFT, (PVOID)& iterate->first, sizeof(DWORD));
+						break;
+					}
+					iterate++;
 				}
-				iterate++;
+				/*if (iterate == symbols.end())
+				{
+					err = uc_mem_write(uc, dwFT, &dllBase, sizeof(DWORD));
+					symbols[dllBase] = funcName;
+					dllBase += 4;
+				}*/
+			}
+			else
+			{
+				//Get import by ordinal
+				DWORD dllBase = loadedDll[libName];
+				WORD ordinal = (WORD)dwThunk;
+				//Get function address
+				iterate1 = loadInOrderFuncs.begin();
+				while (iterate1 != loadInOrderFuncs.end())
+				{
+					if (iterate1->second >= dllBase)
+					{
+						for (size_t i = 0; i < ordinal - 1; i++)
+							iterate1++;
+						err = uc_mem_write(uc, dwFT, (PVOID)& iterate1->second, sizeof(DWORD));
+						break;
+					}
+					iterate1++;
+				}
 			}
 			dwFT += 4;
 			dwFTTemp += 4;
@@ -76,12 +123,14 @@ void Loader::ResolveIAT(uc_engine* uc)
 int Loader::Load(uc_engine*& uc)
 {
 	uc_err err;
+	TCHAR buffer[MAX_PATH] = { 0 };
 
 	//Get mapped PE
 	memMap = pe->getData();
 	if (memMap == NULL)
 	{
-		_tprintf("[!] Cannot map PE!\n");
+		_stprintf(buffer, "[!] Cannot map PE!\n");
+		UcPrint(buffer);
 		return 1;
 	}
 
@@ -97,7 +146,8 @@ int Loader::Load(uc_engine*& uc)
 	//Check PE architecture
 	if (pe->getArch() != IMAGE_FILE_MACHINE_I386)
 	{
-		_tprintf("[!] Unsupported architecture!\n");
+		_stprintf(buffer, "[!] Unsupported architecture!\n");
+		UcPrint(buffer);
 		return 1;
 	}
 
@@ -142,8 +192,11 @@ int Loader::Load(uc_engine*& uc)
 	Register_fs(uc, gdt);
 	Register_gs(uc, gdt);
 
+	//Map exception list
+	DWORD exceptionList = NewHeap(uc, 0x1000);
+
 	//Initialize TIB
-	InitTIB(uc, _stackAddr, _stackAddr - _stackSize, _lastStructureAddress, _lastStructureAddress + getTIBSize());
+	InitTIB(uc, exceptionList, _stackAddr, _stackAddr - _stackSize, _lastStructureAddress, _lastStructureAddress + getTIBSize());
 	_lastStructureAddress += getTIBSize();
 
 	//Initialize ProcessHeap
@@ -164,12 +217,14 @@ int Loader::Load(uc_engine*& uc)
 	//Initialize LDRHead
 	_LDRHead = _lastStructureAddress;
 	_lastLDRDataAddress = _lastStructureAddress;
-	AddToLDR(uc, _LDRHead);
-	_lastStructureAddress += getLDRDataSize();
 
 	//Add main PE to LDR
 	AddToLDR(uc, _lastStructureAddress, imageBase, entryPoint, sizeOfImage, _filePath, _fileName);
 	_lastStructureAddress += getLDRDataSize();
+
+	//Load ntdll.dll
+	TCHAR ntdll[] = "ntdll.dll";
+	LoadDll(uc, ntdll);
 
 	//Resolve IAT
 	ResolveIAT(uc);
@@ -193,5 +248,7 @@ DWORD Loader::getSizeOfImage() const
 
 Loader::~Loader()
 {
+	if (_outFile != INVALID_HANDLE_VALUE)
+		CloseHandle(_outFile);
 	delete pe;
 }

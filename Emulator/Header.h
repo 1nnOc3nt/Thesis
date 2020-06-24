@@ -5,6 +5,7 @@
 #include <Shlwapi.h>
 #include <tchar.h>
 #include <map>
+#include <time.h>
 #include "unicorn/unicorn.h"
 #include "capstone/capstone.h"
 
@@ -14,11 +15,11 @@
 
 using namespace std;
 
-typedef void (*Func)(uc_engine* uc);
-
-extern map<TCHAR*, Func>api;
 extern TCHAR _fileDir[MAX_PATH];
 extern TCHAR _filePath[MAX_PATH];
 extern TCHAR _fileName[MAX_PATH];
 extern DWORD _stackAddr;
 extern DWORD _stackSize;
+extern DWORD _numberOfArguments;
+extern HANDLE _outFile;
+extern DWORD _dwBytesWritten;

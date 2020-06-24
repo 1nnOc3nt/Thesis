@@ -1,7 +1,8 @@
 #include "AnalyzeFile.h"
 
-AnalyzeFile::AnalyzeFile(TCHAR* filePath, TCHAR* arg)
+AnalyzeFile::AnalyzeFile(TCHAR* mode, TCHAR* filePath, TCHAR* arg)
 {
+	this->mode = mode;
 	this->arg = arg;
 	this->filePath = filePath;
 	loader = new Loader(filePath, arg);
@@ -11,8 +12,15 @@ AnalyzeFile::AnalyzeFile(TCHAR* filePath, TCHAR* arg)
 int AnalyzeFile::StartAnalyze()
 {
 	uc_err err;
+	TCHAR buffer[MAX_PATH] = { 0 };
 	
-	_tprintf("[*] Analyzing: %s\n", filePath);
+	_stprintf(buffer, "[*] Analyzing: %s\n", filePath);
+	UcPrint(buffer);
+
+	if (strstr(mode, "a") != NULL)
+		_printAsm = TRUE;
+	if (strstr(mode, "r") != NULL)
+		_printReg = TRUE;
 
 	//Load PE & setup environment
 	if (loader->Load(uc))
@@ -28,7 +36,8 @@ int AnalyzeFile::StartAnalyze()
 		HandleUcError(err);
 
 
-	_tprintf("[*] Done!\n");
+	strcat(buffer, "[*] Done!\n");
+	UcPrint(buffer);
 	return 0;
 }
 

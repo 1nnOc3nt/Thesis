@@ -27,6 +27,7 @@ GDT::GDT(uc_engine* uc, DWORD gdtAddr, DWORD gdtLimit, DWORD gdtNumber)
 void GDT::RegisterGDTSegment(uc_engine* uc, DWORD index, DWORD segAddr, DWORD segSize, DWORD sPort, DWORD rPort)
 {
 	uc_err err;
+	TCHAR buffer[MAX_PATH] = { 0 };
 	if (index == 10)
 	{
 		err = uc_mem_map(uc, segAddr, segSize, UC_PROT_ALL);
@@ -36,7 +37,8 @@ void GDT::RegisterGDTSegment(uc_engine* uc, DWORD index, DWORD segAddr, DWORD se
 
 	if (index < 0 || index >= this->gdtNumber)
 	{
-		_tprintf("[!] Error: GDT register index error!\n");
+		_stprintf(buffer, "[!] Error: GDT register index error!\n");
+		UcPrint(buffer);
 		return;
 	}
 

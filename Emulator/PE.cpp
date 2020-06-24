@@ -1,5 +1,18 @@
 #include "PE.h"
 
+PE::PE(TCHAR* filePath)
+{
+	this->filePath = filePath;
+	pe = NULL;
+	arch = 0;
+	imageBase = 0;
+	entryPoint = 0;
+	sizeOfImage = 0;
+	importRVA = 0;
+	exportRVA = 0;
+	memMap = mapPE();
+}
+
 LPVOID PE::mapPE()
 {
 	HANDLE hFile = INVALID_HANDLE_VALUE;
@@ -78,19 +91,6 @@ LPVOID PE::mapPE()
 	UnmapViewOfFile(lpMapAddress);
 
 	return tempMem;
-}
-
-PE::PE(TCHAR* filePath)
-{
-	this->filePath = filePath;
-	pe = NULL;
-	arch = 0;
-	imageBase = 0;
-	entryPoint = 0;
-	sizeOfImage = 0;
-	importRVA = 0;
-	exportRVA = 0;
-	memMap = mapPE();
 }
 
 DWORD PE::getArch() const

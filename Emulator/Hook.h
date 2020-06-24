@@ -11,5 +11,7 @@ struct CacheIns
 extern CacheIns _cache;
 extern BOOL _isCached;
 extern int _tabSize;
+extern BOOL _printAsm;
+extern BOOL _printReg;
 
 void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data);
