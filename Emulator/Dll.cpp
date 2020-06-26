@@ -6,6 +6,7 @@ DWORD _numbersOfFunc = 0;
 map<DWORD, TCHAR*>symbols;
 map<DWORD, DWORD>loadInOrderFuncs;
 map<TCHAR*, DWORD>loadedDll;
+map<TCHAR*, TCHAR*>fullDllPath;
 
 DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 {
@@ -55,30 +56,34 @@ DWORD LoadDll(uc_engine* uc, TCHAR* dllName)
 
 	if (!PathFileExists(dllPath))
 	{
-		////Allocate memory for Dll in emulator
-		//err = uc_mem_map(uc, dllBase, 0x1000, UC_PROT_ALL);
-		//if (err != UC_ERR_OK)
-		//	HandleUcError(err);
+		//Allocate memory for Dll in emulator
+		err = uc_mem_map(uc, dllBase, 0x1000, UC_PROT_ALL);
+		if (err != UC_ERR_OK)
+			HandleUcError(err);
 
-		////Write ret into emulator memory
-		//for (size_t i = 0; i < 0x1000; i++)
-		//{
-		//	CHAR ret = 0xc3;
-		//	err = uc_mem_write(uc, dllBase+i, &ret, sizeof(CHAR));
-		//	if (err != UC_ERR_OK)
-		//		HandleUcError(err);
-		//}
+		//Write ret into emulator memory
+		for (size_t i = 0; i < 0x1000; i++)
+		{
+			CHAR ret = 0xc3;
+			err = uc_mem_write(uc, dllBase+i, &ret, sizeof(CHAR));
+			if (err != UC_ERR_OK)
+				HandleUcError(err);
+		}
 
-		////Update last Dll address
-		//_dllLastAddr += 0x1000;
+		//Update last Dll address
+		_dllLastAddr += 0x1000;
 
-		////Add Dll to LDR
-		//AddToLDR(uc, _lastStructureAddress, dllBase, dllBase, 0x1000, dllPath, dllName);
-		//_lastStructureAddress += getLDRDataSize();
+		//Add Dll to LDR
+		AddToLDR(uc, _lastStructureAddress, dllBase, dllBase, 0x1000, dllPath, dllName);
+		_lastStructureAddress += getLDRDataSize();
 
-		//return dllBase;
-		return 0;
+		loadedDll[dllName] = dllBase;
+
+		return dllBase;
+		//return 0;
 	}
+
+	fullDllPath[dllName] = dllPath;
 	
 	//Get Dll data
 	dll = new PE(dllPath);

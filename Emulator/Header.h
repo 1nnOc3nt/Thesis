@@ -1,11 +1,12 @@
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <Windows.h>
+#include <windows.h>
 #include <Shlwapi.h>
 #include <tchar.h>
 #include <map>
 #include <time.h>
+#include <tlhelp32.h>
 #include "unicorn/unicorn.h"
 #include "capstone/capstone.h"
 

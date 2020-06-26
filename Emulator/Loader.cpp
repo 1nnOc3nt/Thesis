@@ -62,8 +62,11 @@ void Loader::ResolveIAT(uc_engine* uc)
 		//Load Dll
 		DWORD dllBase = LoadDll(uc, libName);
 
-		if (dllBase == 0)
+		/*if (dllBase == 0)
+		{
+			dwImportVA += sizeof(IMAGE_IMPORT_DESCRIPTOR);
 			continue;
+		}*/
 
 		//Get First Thunk
 		dwFT = (DWORD)imageBase + ((PIMAGE_IMPORT_DESCRIPTOR)dwImportVA)->FirstThunk;
@@ -87,12 +90,12 @@ void Loader::ResolveIAT(uc_engine* uc)
 					}
 					iterate++;
 				}
-				/*if (iterate == symbols.end())
+				if (iterate == symbols.end())
 				{
 					err = uc_mem_write(uc, dwFT, &dllBase, sizeof(DWORD));
 					symbols[dllBase] = funcName;
 					dllBase += 4;
-				}*/
+				}
 			}
 			else
 			{
@@ -221,6 +224,9 @@ int Loader::Load(uc_engine*& uc)
 	//Add main PE to LDR
 	AddToLDR(uc, _lastStructureAddress, imageBase, entryPoint, sizeOfImage, _filePath, _fileName);
 	_lastStructureAddress += getLDRDataSize();
+
+	//Add to Loaded Dll
+	loadedDll[_fileName] = imageBase;
 
 	//Load ntdll.dll
 	TCHAR ntdll[] = "ntdll.dll";

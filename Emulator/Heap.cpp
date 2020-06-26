@@ -26,6 +26,11 @@ DWORD NewHeap(uc_engine* uc, DWORD heapSize)
 	uc_err err;
 	DWORD heapAddress = 0;
 
+	if (heapSize < 0x1000)
+		heapSize = 0x1000;
+	else if ((heapSize & 1024) == 0 && (heapSize%0x1000) != 0)
+		heapSize = (heapSize + 0x1000) ^ (heapSize & 0xfff);
+
 	if (heap.empty())
 	{
 		heapAddress = _heapAddr;
@@ -96,7 +101,7 @@ DWORD NewHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 	return heapAddress;
 }
 
-void DeleteHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
+BOOL DeleteHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 {
 	uc_err err;
 	TCHAR buffer[MAX_PATH] = { 0 };
@@ -105,15 +110,16 @@ void DeleteHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 	{
 		_stprintf(buffer, "[!] Error: Given address is not in Heap!\n");
 		UcPrint(buffer);
+		return FALSE;
 	}
 	else
 	{
-		if (heapSize == heap[heapAddress])
+		if (heapSize == heap[heapAddress] || heapSize == 0)
 		{
 			heap.erase(heapAddress);
 			err = uc_mem_unmap(uc, heapAddress, heap[heapAddress]);
 			if (err != UC_ERR_OK)
-				HandleUcErrorVoid(err);
+				HandleUcErrorNull(err);
 		}
 		else
 		{
@@ -123,7 +129,8 @@ void DeleteHeap(uc_engine* uc, DWORD heapAddress, DWORD heapSize)
 			heap[newHeapAddress] = newHeapSize;
 			err = uc_mem_unmap(uc, heapAddress, heapSize);
 			if (err != UC_ERR_OK)
-				HandleUcErrorVoid(err);
+				HandleUcErrorNull(err);
 		}
 	}
+	return TRUE;
 }

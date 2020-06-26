@@ -586,7 +586,7 @@ void EmuCreateMutex(uc_engine* uc, DWORD tab, DWORD lpMutexAttributes, BOOL bIni
 	}
 	else
 	{
-		_stprintf(buffer, "(lpMutexAttributes=0x%lX,bInitialOwner=TRUE, lpName=&\"%s\")\n", lpMutexAttributes, name);
+		_stprintf(buffer, "(lpMutexAttributes=0x%lX,bInitialOwner=FALSE, lpName=&\"%s\")\n", lpMutexAttributes, name);
 		UcPrintAPIArg(buffer, tab);
 	}
 
@@ -1247,7 +1247,7 @@ void EmuCreateProcessW(uc_engine* uc, DWORD tab)
 	EmuCreateProcess(uc, tab, applicationName, commandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, creationFlags, lpEnvironment, currentDirectory, lpStartupInfo, lpProcessInformation);
 }
 
-void EmuCreateCreateRemoteThread(uc_engine* uc, DWORD tab)
+void EmuCreateRemoteThread(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
 	DWORD hProcess = 0;
@@ -1312,7 +1312,7 @@ void EmuCreateCreateRemoteThread(uc_engine* uc, DWORD tab)
 	_numberOfArguments = 7;
 }
 
-void EmuCreateCreateRemoteThreadEx(uc_engine* uc, DWORD tab)
+void EmuCreateRemoteThreadEx(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
 	DWORD hProcess = 0;
@@ -1447,6 +1447,111 @@ void EmuCreateThread(uc_engine* uc, DWORD tab)
 	}
 }
 
+void EmuCreateToolhelp32Snapshot(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwFlags = 0;
+	DWORD th32ProcessID = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp);
+
+	//Get th32ProcessID
+	th32ProcessID = getDWORD(uc, sp + 4);
+
+	//Print argument
+	_stprintf(buffer, "(dwFlags=0x%lX, th32ProcessID=0x%lX)\n", dwFlags, th32ProcessID);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call CreateToolhelp32Snapshot and get return value
+	DWORD retVal = (DWORD)CreateToolhelp32Snapshot(dwFlags, th32ProcessID);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 2;
+}
+
+void EmuDecodePointer(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD Ptr = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get Ptr
+	Ptr = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(Ptr=0x%lX)\n", Ptr);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = Ptr;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuDeleteCriticalSection(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpCriticalSection = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpCriticalSection
+	lpCriticalSection = getDWORD(uc, sp);
+
+	//Print arguments
+	_stprintf(buffer, "(lpCriticalSection=0x%lX)\n", lpCriticalSection);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
 void EmuDeleteFile(uc_engine* uc, DWORD tab, TCHAR fileName[])
 {
 	uc_err err;
@@ -1455,12 +1560,8 @@ void EmuDeleteFile(uc_engine* uc, DWORD tab, TCHAR fileName[])
 	_stprintf(buffer, "(lpFileName=&\"%s\")\n", fileName);
 	UcPrintAPIArg(buffer, tab);
 
-	//Call DeleteFile and get return value
-	BOOL retVal = DeleteFile(fileName);
-
-	//Set last error
-	DWORD errorCode = GetLastError();
-	UcSetLastError(uc, errorCode);
+	//Always return TRUE
+	BOOL retVal = TRUE;
 
 	//Push return value back into Unicorn Engine
 	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
@@ -1513,6 +1614,168 @@ void EmuDeleteFileW(uc_engine* uc, DWORD tab)
 	EmuDeleteFile(uc, tab, fileName);
 }
 
+void EmuDisconnectNamedPipe(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hNamedPipe = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hNamedPipe
+	hNamedPipe = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(hNamedPipe=0x%lX)\n", hNamedPipe);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call DisconnectNamedPipe and get return value
+	BOOL retVal = DisconnectNamedPipe((HANDLE)hNamedPipe);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuDuplicateHandle(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hSourceProcessHandle = 0;
+	DWORD hSourceHandle = 0;
+	DWORD hTargetProcessHandle = 0;
+	DWORD lpTargetHandle = 0;
+	DWORD dwDesiredAccess = 0;
+	DWORD bInheritHandle = 0;
+	DWORD dwOptions = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hSourceProcessHandle
+	hSourceProcessHandle = getDWORD(uc, sp);
+
+	//Get hSourceHandle
+	hSourceHandle = getDWORD(uc, sp + 4);
+
+	//Get hTargetProcessHandle
+	hTargetProcessHandle = getDWORD(uc, sp + 8);
+
+	//Get lpTargetHandle
+	lpTargetHandle = getDWORD(uc, sp + 12);
+
+	//Get dwDesiredAccess
+	dwDesiredAccess = getDWORD(uc, sp + 16);
+
+	//Get bInheritHandle
+	bInheritHandle = getDWORD(uc, sp + 20);
+
+	//Get dwOptions
+	dwOptions = getDWORD(uc, sp + 24);
+
+	//Print arguments
+	_stprintf(buffer, "(hSourceProcessHandle=0x%lX, hSourceHandle=0x%lX, hTargetProcessHandle=0x%lX, lpTargetHandle=0x%lX, dwDesiredAccess=0x%lX, bInheritHandle=0x%lX, dwOptions=0x%lX)\n",
+		hSourceProcessHandle, hSourceHandle, hTargetProcessHandle, lpTargetHandle, dwDesiredAccess, bInheritHandle, dwOptions);
+	UcPrintAPIArg(buffer, tab);
+
+	//Default return value
+	BOOL retVal = TRUE;
+	err = uc_mem_write(uc, lpTargetHandle, &hSourceHandle, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 7;
+}
+
+void EmuEncodePointer(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD Ptr = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get Ptr
+	Ptr = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(Ptr=0x%lX)\n", Ptr);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = Ptr;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuEnterCriticalSection(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpCriticalSection = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpCriticalSection
+	lpCriticalSection = getDWORD(uc, sp);
+
+	//Print arguments
+	_stprintf(buffer, "(lpCriticalSection=0x%lX)\n", lpCriticalSection);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
 void EmuExitProcess(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
@@ -1535,6 +1798,107 @@ void EmuExitProcess(uc_engine* uc, DWORD tab)
 	err = uc_emu_stop(uc);
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
+}
+
+void EmuExitThread(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwExitCode = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Get dwExitCode
+	dwExitCode = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(dwExitCode=0x%lX)\n", dwExitCode);
+	UcPrintAPIArg(buffer, tab);
+
+	err = uc_emu_stop(uc);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+}
+
+void EmuFindClose(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hFindFile = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hFindFile
+	hFindFile = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(hFindFile=0x%lX)\n", hFindFile);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call FindClose and get return value
+	BOOL retVal = FindClose((HANDLE)hFindFile);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuFindFirstFile(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindFirstFileA(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindFirstFileExA(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindFirstFileExW(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindFirstFileW(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindNextFile(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindNextFileA(uc_engine* uc, DWORD tab)
+{
+
+}
+
+void EmuFindNextFileW(uc_engine* uc, DWORD tab)
+{
+
 }
 
 void EmuFlsAlloc(uc_engine* uc, DWORD tab)
@@ -1682,6 +2046,109 @@ void EmuFlsSetValue(uc_engine* uc, DWORD tab)
 	_numberOfArguments = 2;
 }
 
+void EmuFreeLibrary(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hLibModule = 0;
+	map<TCHAR*, DWORD>::iterator iterate;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hLibModule
+	hLibModule = getDWORD(uc, sp);
+
+	//Print argument
+	BOOL retVal = 0;
+	iterate = loadedDll.begin();
+	while (iterate != loadedDll.end())
+	{
+		if (iterate->second == hLibModule)
+		{
+			_stprintf(buffer, "(hLibModule=0x%lX -> \"%s\")\n", hLibModule, iterate->first);
+			UcPrintAPIArg(buffer, tab);
+			retVal = TRUE;
+		}
+		iterate++;
+	}
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuGetCurrentProcess(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+
+	//Return value
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 0;
+}
+
+void EmuGetCurrentProcessId(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD retVal = 0x1234;
+	DWORD sp = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 0;
+}
+
+void EmuGetCurrentThread(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+
+	//Return value
+	DWORD retVal = 0xff;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 0;
+}
+
+void EmuGetCurrentThreadId(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD retVal = 0x1;
+	DWORD sp = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 0;
+}
+
 void EmuGetLastError(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
@@ -1698,6 +2165,350 @@ void EmuGetLastError(uc_engine* uc, DWORD tab)
 
 	//Cleanup stack
 	_numberOfArguments = 0;
+}
+
+void EmuGetModuleFileName(uc_engine* uc, DWORD tab, DWORD hModule, DWORD lpFilename, DWORD nSize, BOOL isW)
+{
+	uc_err err;
+	map<TCHAR*, DWORD>::iterator iterate;
+	DWORD len = 0;
+	WCHAR dllPathW[MAX_PATH] = { 0 };
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	DWORD retVal = 0;
+	if (hModule)
+	{
+		iterate = loadedDll.begin();
+		while (iterate != loadedDll.end())
+		{
+			if (iterate->second == hModule)
+			{
+				if (isW)
+				{
+					len = mbstowcs(dllPathW, fullDllPath[iterate->first], strlen(fullDllPath[iterate->first]));
+					if (nSize <= len)
+					{
+						retVal = nSize;
+						err = uc_mem_write(uc, lpFilename, dllPathW, nSize*2);
+					}
+					else
+					{
+						retVal = len;
+						err = uc_mem_write(uc, lpFilename, dllPathW, len * 2);
+					}
+				}
+				else
+				{
+					len = strlen(fullDllPath[iterate->first]);
+					if (nSize <= len)
+					{
+						retVal = nSize;
+						err = uc_mem_write(uc, lpFilename, fullDllPath[iterate->first], nSize);
+					}
+					else
+					{
+						retVal = len;
+						err = uc_mem_write(uc, lpFilename, fullDllPath[iterate->first], len);
+					}
+				}
+
+				if (err != UC_ERR_OK)
+					HandleUcErrorVoid(err);
+				break;
+			}
+			iterate++;
+		}
+	}
+	else
+	{
+		if (isW)
+		{
+			len = mbstowcs(dllPathW, _filePath, strlen(_filePath));
+			if (nSize <= len)
+			{
+				retVal = nSize;
+				err = uc_mem_write(uc, lpFilename, dllPathW, nSize * 2);
+			}
+			else
+			{
+				retVal = len;
+				err = uc_mem_write(uc, lpFilename, dllPathW, len * 2);
+			}
+		}
+		else
+		{
+			len = strlen(_filePath);
+			if (nSize <= len)
+			{
+				retVal = nSize;
+				err = uc_mem_write(uc, lpFilename, _filePath, nSize);
+			}
+			else
+			{
+				retVal = len;
+				err = uc_mem_write(uc, lpFilename, _filePath, len);
+			}
+		}
+
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+	}
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuGetModuleFileNameA(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hModule = 0;
+	DWORD lpFilename = 0;
+	DWORD nSize = 0;
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hModule
+	hModule = getDWORD(uc, sp);
+
+	//Get lpFilename
+	lpFilename = getDWORD(uc, sp + 4);
+
+	//Get nSize
+	nSize = getDWORD(uc, sp + 8);
+
+	EmuGetModuleFileName(uc, tab, hModule, lpFilename, nSize, FALSE);
+}
+
+void EmuGetModuleFileNameW(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hModule = 0;
+	DWORD lpFilename = 0;
+	DWORD nSize = 0;
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hModule
+	hModule = getDWORD(uc, sp);
+
+	//Get lpFilename
+	lpFilename = getDWORD(uc, sp + 4);
+
+	//Get nSize
+	nSize = getDWORD(uc, sp + 8);
+
+	EmuGetModuleFileName(uc, tab, hModule, lpFilename, nSize, TRUE);
+}
+
+void EmuGetModuleHandle(uc_engine* uc, DWORD tab, TCHAR moduleName[])
+{
+	uc_err err;
+	map<TCHAR*, DWORD>::iterator iterate;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Print argument
+	_stprintf(buffer, "(lpModuleName=&\"%s\")\n", moduleName);
+	UcPrintAPIArg(buffer, tab);
+
+	if (!PathIsRelative(moduleName))
+		PathStripPath(moduleName);
+
+	DWORD retVal = 0;
+	iterate = loadedDll.begin();
+	while (iterate != loadedDll.end())
+	{
+		if (strstr(iterate->first, moduleName) != NULL)
+		{
+			retVal = iterate->second;
+			break;
+		}
+		iterate++;
+	}
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuGetModuleHandleEx(uc_engine* uc, DWORD tab, DWORD dwFlags, TCHAR moduleName[], DWORD phModule)
+{
+	uc_err err;
+	map<TCHAR*, DWORD>::iterator iterate;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Print arguments
+	_stprintf(buffer, "(dwFlags=0x%lX, lpModuleName=&\"%s\", phModule=0x%lX)\n", dwFlags, moduleName, phModule);
+	UcPrintAPIArg(buffer, tab);
+
+	if (!PathIsRelative(moduleName))
+		PathStripPath(moduleName);
+
+	BOOL retVal = FALSE;
+	iterate = loadedDll.begin();
+	while (iterate != loadedDll.end())
+	{
+		if (strstr(iterate->first, moduleName) != NULL)
+		{
+			retVal = TRUE;
+			DWORD handle = iterate->second;
+			err = uc_mem_write(uc, phModule, &handle, sizeof(DWORD));
+			if (err != UC_ERR_OK)
+				HandleUcErrorVoid(err);
+			break;
+		}
+		iterate++;
+	}
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuGetModuleHandleA(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpModuleName = 0;
+	DWORD sp = 0;
+	TCHAR moduleName[MAX_PATH] = { 0 };
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpModuleName
+	lpModuleName = getDWORD(uc, sp);
+	
+	if (lpModuleName)
+	{
+		getString(uc, lpModuleName, moduleName);
+		EmuGetModuleHandle(uc, tab, moduleName);
+	}
+	else
+		EmuGetModuleHandle(uc, tab, _fileName);
+}
+
+void EmuGetModuleHandleExA(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwFlags = 0;
+	DWORD lpModuleName = 0;
+	DWORD phModule = 0;
+	TCHAR moduleName[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp);
+
+	//Get lpModuleName
+	lpModuleName = getDWORD(uc, sp + 4);
+
+	//Get phModule
+	phModule = getDWORD(uc, sp + 8);
+
+	if (lpModuleName)
+	{
+		getString(uc, lpModuleName, moduleName);
+		EmuGetModuleHandleEx(uc, tab, dwFlags, moduleName, phModule);
+	}
+	else
+		EmuGetModuleHandleEx(uc, tab, dwFlags, moduleName, phModule);
+}
+
+void EmuGetModuleHandleExW(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwFlags = 0;
+	DWORD lpModuleName = 0;
+	DWORD phModule = 0;
+	TCHAR moduleName[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp);
+
+	//Get lpModuleName
+	lpModuleName = getDWORD(uc, sp + 4);
+
+	//Get phModule
+	phModule = getDWORD(uc, sp + 8);
+
+	if (lpModuleName)
+	{
+		getStringW(uc, lpModuleName, moduleName);
+		EmuGetModuleHandleEx(uc, tab, dwFlags, moduleName, phModule);
+	}
+	else
+		EmuGetModuleHandleEx(uc, tab, dwFlags, moduleName, phModule);
+}
+
+void EmuGetModuleHandleW(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpModuleName = 0;
+	DWORD sp = 0;
+	TCHAR moduleName[MAX_PATH] = { 0 };
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpModuleName
+	lpModuleName = getDWORD(uc, sp);
+
+	if (lpModuleName)
+	{
+		getStringW(uc, lpModuleName, moduleName);
+		EmuGetModuleHandle(uc, tab, moduleName);
+	}
+	else
+		EmuGetModuleHandle(uc, tab, _fileName);
 }
 
 void EmuGetProcAddress(uc_engine* uc, DWORD tab)
@@ -1768,6 +2579,212 @@ void EmuGetProcAddress(uc_engine* uc, DWORD tab)
 	_numberOfArguments = 2;
 }
 
+void EmuGetProcessHeap(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	
+	DWORD retVal = _heapAddr;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 0;
+}
+
+void EmuGetSystemTimeAsFileTime(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpSystemTimeAsFileTime = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpSystemTimeAsFileTime
+	lpSystemTimeAsFileTime = getDWORD(uc, sp);
+
+	//Print arguments
+	_stprintf(buffer, "(lpSystemTimeAsFileTime=0x%lX)\n", lpSystemTimeAsFileTime);
+	UcPrintAPIArg(buffer, tab);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuHeapAlloc(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hHeap = 0;
+	DWORD dwFlags = 0;
+	DWORD dwBytes = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hHeap
+	hHeap = getDWORD(uc, sp);
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp + 4);
+
+	//Get dwBytes
+	dwBytes = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(hHeap=0x%lX, dwFlags=0x%lX, dwBytes=0x%lX)\n", hHeap, dwFlags, dwBytes);
+	UcPrintAPIArg(buffer, tab);
+
+	//Allocate Heap
+	DWORD retVal = NewHeap(uc, dwBytes);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuHeapCreate(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD flOptions = 0;
+	DWORD dwInitialSize = 0;
+	DWORD dwMaximumSize = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get flOptions
+	flOptions = getDWORD(uc, sp);
+
+	//Get dwInitialSize
+	dwInitialSize = getDWORD(uc, sp + 4);
+
+	//Get dwMaximumSize
+	dwMaximumSize = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(flOptions=0x%lX, dwInitialSize=0x%lX, dwMaximumSize=0x%lX)\n", flOptions, dwInitialSize, dwMaximumSize);
+	UcPrintAPIArg(buffer, tab);
+
+	//Allocate Heap
+	DWORD retVal = _heapAddr;
+	 
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuHeapFree(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hHeap = 0;
+	DWORD dwFlags = 0;
+	DWORD lpMem = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hHeap
+	hHeap = getDWORD(uc, sp);
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp + 4);
+
+	//Get lpMem
+	lpMem = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(hHeap=0x%lX, dwFlags=0x%lX, lpMem=0x%lX)\n", hHeap, dwFlags, lpMem);
+	UcPrintAPIArg(buffer, tab);
+
+	//Delete Heap
+	BOOL retVal = TRUE;
+	if (lpMem != 0)
+		retVal = DeleteHeap(uc, lpMem);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuHeapSize(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hHeap = 0;
+	DWORD dwFlags = 0;
+	DWORD lpMem = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hHeap
+	hHeap = getDWORD(uc, sp);
+
+	//Get dwFlags
+	dwFlags = getDWORD(uc, sp + 4);
+
+	//Get lpMem
+	lpMem = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(hHeap=0x%lX, dwFlags=0x%lX, lpMem=0x%lX)\n", hHeap, dwFlags, lpMem);
+	UcPrintAPIArg(buffer, tab);
+
+	//Allocate Heap
+	DWORD retVal = heap[lpMem];
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
 void EmuInitializeCriticalSection(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
@@ -1788,6 +2805,13 @@ void EmuInitializeCriticalSection(uc_engine* uc, DWORD tab)
 	//Print arguments
 	_stprintf(buffer, "(lpCriticalSection=0x%lX)\n", lpCriticalSection);
 	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 1;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
 
 	//Cleanup stack
 	_numberOfArguments = 1;
@@ -1832,6 +2856,141 @@ void EmuInitializeCriticalSectionEx(uc_engine* uc, DWORD tab)
 
 	//Cleanup stack
 	_numberOfArguments = 3;
+}
+
+void EmuIsBadReadPtr(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lp = 0;
+	DWORD ucb = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lp
+	lp = getDWORD(uc, sp);
+
+	//Get ucb
+	ucb = getDWORD(uc, sp + 4);
+
+	//Print arguments
+	_stprintf(buffer, "(lp=0x%lX, ucb=0x%lX)\n", lp, ucb);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 2;
+}
+
+void EmuIsProcessorFeaturePresent(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD ProcessorFeature = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get ProcessorFeature
+	ProcessorFeature = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(ProcessorFeature=0x%lX)\n", ProcessorFeature);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call CloseHandle and get return value
+	BOOL retVal = IsProcessorFeaturePresent(ProcessorFeature);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuIsWow64Process(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hProcess = 0;
+	DWORD Wow64Process = 0;
+	BOOL retVal = TRUE;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hProcess
+	hProcess = getDWORD(uc, sp);
+
+	//Get Wow64Process
+	Wow64Process = getDWORD(uc, sp + 4);
+	err = uc_mem_write(uc, Wow64Process, &retVal, sizeof(BOOL));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 2;
+}
+
+void EmuLeaveCriticalSection(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpCriticalSection = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpCriticalSection
+	lpCriticalSection = getDWORD(uc, sp);
+
+	//Print arguments
+	_stprintf(buffer, "(lpCriticalSection=0x%lX)\n", lpCriticalSection);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
 }
 
 void EmuLoadLibrary(uc_engine* uc, DWORD tab, TCHAR libFileName[])
@@ -1984,4 +3143,817 @@ void EmuLoadLibraryW(uc_engine* uc, DWORD tab)
 	getStringW(uc, lpLibFileName, libFileName);
 
 	EmuLoadLibrary(uc, tab, libFileName);
+}
+
+void EmuOpenMutex(uc_engine* uc, DWORD tab, DWORD dwDesiredAccess, BOOL bInheritHandle, TCHAR mutexAccess[], TCHAR name[])
+{
+	uc_err err;
+	TCHAR buffer[MAX_PATH] = { 0 };
+	//Print arguments
+	if (bInheritHandle)
+	{
+		_stprintf(buffer, "(dwDesiredAccess=%s,bInheritHandle=TRUE, lpName=&\"%s\")\n", mutexAccess, name);
+		UcPrintAPIArg(buffer, tab);
+	}
+	else
+	{
+		_stprintf(buffer, "(dwDesiredAccess=%s,bInheritHandle=FALSE, lpName=&\"%s\")\n", mutexAccess, name);
+		UcPrintAPIArg(buffer, tab);
+	}
+
+	//Call CreateMutex and get return value
+	DWORD retVal = (DWORD)OpenMutex(dwDesiredAccess, bInheritHandle, name);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuOpenMutexA(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwDesiredAccess = 0;
+	BOOL bInheritHandle = 0;
+	DWORD lpName = 0;
+	TCHAR mutexAccess[MAX_PATH] = { 0 };
+	TCHAR name[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwDesiredAccess
+	dwDesiredAccess = getDWORD(uc, sp);
+	getMutexAccess(mutexAccess, dwDesiredAccess);
+
+	//Get bInheritHandle
+	bInheritHandle = getDWORD(uc, sp + 4);
+
+	//Get lpName
+	lpName = getDWORD(uc, sp + 8);
+	getString(uc, lpName, name);
+
+	EmuOpenMutex(uc, tab, dwDesiredAccess, bInheritHandle, mutexAccess, name);
+}
+
+void EmuOpenMutexW(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwDesiredAccess = 0;
+	BOOL bInheritHandle = 0;
+	DWORD lpName = 0;
+	TCHAR mutexAccess[MAX_PATH] = { 0 };
+	TCHAR name[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwDesiredAccess
+	dwDesiredAccess = getDWORD(uc, sp);
+	getMutexAccess(mutexAccess, dwDesiredAccess);
+
+	//Get bInheritHandle
+	bInheritHandle = getDWORD(uc, sp + 4);
+
+	//Get lpName
+	lpName = getDWORD(uc, sp + 8);
+	getStringW(uc, lpName, name);
+
+	EmuOpenMutex(uc, tab, dwDesiredAccess, bInheritHandle, mutexAccess, name);
+}
+
+void EmuQueryPerformanceCounter(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpPerformanceCount = 0;
+	DWORD count = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpPerformanceCount
+	lpPerformanceCount = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(lpPerformanceCount=0x%lX)\n", lpPerformanceCount);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call QueryPerformanceCounter and get return value
+	BOOL retVal = QueryPerformanceCounter((LARGE_INTEGER*)count);
+	err = uc_mem_write(uc, lpPerformanceCount, &count, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuSetErrorMode(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD uMode = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get uMode
+	uMode = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(uMode=0x%lX)\n", uMode);
+	UcPrintAPIArg(buffer, tab);
+
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuSetLastError(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwErrCode = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwErrCode
+	dwErrCode = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(dwErrCode=0x%lX)\n", dwErrCode);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call UcSetLastError and get return value
+	UcSetLastError(uc, dwErrCode);
+
+	//Push return value back into Unicorn Engine
+	DWORD tib = 0x6000;
+	err = uc_reg_write(uc, UC_X86_REG_ECX, &tib);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	err = uc_reg_write(uc, UC_X86_REG_EDX, &dwErrCode);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuSleep(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwMilliseconds = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwMilliseconds
+	dwMilliseconds = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(dwMilliseconds=0x%lX)\n", dwMilliseconds);
+	UcPrintAPIArg(buffer, tab);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuSleepEx(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwMilliseconds = 0;
+	DWORD bAlertable = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwMilliseconds
+	dwMilliseconds = getDWORD(uc, sp);
+
+	//Print arguments
+	if (bAlertable)
+		_stprintf(buffer, "(dwMilliseconds=0x%lX, bAlertable=TRUE)\n", dwMilliseconds);
+	else
+		_stprintf(buffer, "(dwMilliseconds=0x%lX, bAlertable=FALSE)\n", dwMilliseconds);
+	UcPrintAPIArg(buffer, tab);
+
+	//Cleanup stack
+	_numberOfArguments = 2;
+}
+
+void EmuTlsAlloc(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+
+	//Alloc Fiber
+	DWORD retVal = AllocFiber();
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//CleanupStack
+	_numberOfArguments = 0;
+}
+
+void EmuTlsFree(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwTlsIndex = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwTlsIndex
+	dwTlsIndex = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(dwTlsIndex=0x%lX)\n", dwTlsIndex);
+	UcPrintAPIArg(buffer, tab);
+
+	//Default return value
+	BOOL retVal = FreeFiber(dwTlsIndex);
+
+	if (!retVal)
+		UcSetLastError(uc, 0x57);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//CleanupStack
+	_numberOfArguments = 1;
+}
+
+void EmuTlsGetValue(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwTlsIndex = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwTlsIndex
+	dwTlsIndex = getDWORD(uc, sp);
+
+	//Print argument
+	_stprintf(buffer, "(dwTlsIndex=0x%lX)\n", dwTlsIndex);
+	UcPrintAPIArg(buffer, tab);
+
+	//Default return value
+	DWORD retVal = GetFiber(dwTlsIndex);
+
+	if (retVal == 0)
+		UcSetLastError(uc, 0x57);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//CleanupStack
+	_numberOfArguments = 1;
+}
+
+void EmuTlsSetValue(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD dwTlsIndex = 0;
+	DWORD lpTlsData = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get dwTlsIndex
+	dwTlsIndex = getDWORD(uc, sp);
+
+	//Get lpTlsData
+	lpTlsData = getDWORD(uc, sp + 4);
+
+	//Print arguments
+	_stprintf(buffer, "(dwTlsIndex=0x%lX, lpTlsData=0x%lX)\n", dwTlsIndex, lpTlsData);
+	UcPrintAPIArg(buffer, tab);
+
+	//Default return value
+	BOOL retVal = SetFiber(dwTlsIndex, lpTlsData);
+
+	if (!retVal)
+		UcSetLastError(uc, 0x57);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//CleanupStack
+	_numberOfArguments = 2;
+}
+
+void EmuVirtualAlloc(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD flAllocationType = 0;
+	DWORD flProtect = 0;
+	TCHAR pageAccess[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 4);
+
+	//Get flAllocationType
+	flAllocationType = getDWORD(uc, sp + 8);
+
+	//Get flProtect
+	flProtect = getDWORD(uc, sp + 12);
+	getPageAccess(pageAccess, flProtect);
+
+	//Print arguments
+	_stprintf(buffer, "(lpAddress=0x%lX, dwSize=0x%lX, flAllocationType=0x%lX, flProtect=%s)\n", lpAddress, dwSize, flAllocationType, pageAccess);
+	UcPrintAPIArg(buffer, tab);
+
+	//Allocate memory
+	DWORD retVal = 0;
+	if (lpAddress)
+		retVal = NewHeap(uc, lpAddress, dwSize);
+	else
+		retVal = NewHeap(uc, dwSize);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 4;
+}
+
+void EmuVirtualAllocEx(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hProcess = 0;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD flAllocationType = 0;
+	DWORD flProtect = 0;
+	TCHAR pageAccess[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hProcess
+	hProcess = getDWORD(uc, sp);
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp + 4);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 8);
+
+	//Get flAllocationType
+	flAllocationType = getDWORD(uc, sp + 12);
+
+	//Get flProtect
+	flProtect = getDWORD(uc, sp + 16);
+	getPageAccess(pageAccess, flProtect);
+
+	//Print arguments
+	_stprintf(buffer, "(hProcess=0x%lX, lpAddress=0x%lX, dwSize=0x%lX, flAllocationType=0x%lX, flProtect=%s)\n", hProcess, lpAddress, dwSize, flAllocationType, pageAccess);
+	UcPrintAPIArg(buffer, tab);
+
+	//Allocate memory
+	DWORD retVal = 0;
+	if (hProcess == loadedDll[_fileName])
+	{
+		if (lpAddress)
+			retVal = NewHeap(uc, lpAddress, dwSize);
+		else
+			retVal = NewHeap(uc, dwSize);
+	}
+	else
+		retVal = (DWORD)VirtualAllocEx((HANDLE)hProcess, (LPVOID)lpAddress, dwSize, flAllocationType, flProtect);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 5;
+}
+
+void EmuVirtualFree(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD dwFreeType = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 4);
+
+	//Get dwFreeType
+	dwFreeType = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(lpAddress=0x%lX, dwSize=0x%lX, dwFreeType=0x%lX)\n", lpAddress, dwSize, dwFreeType);
+	UcPrintAPIArg(buffer, tab);
+
+	//Free memory
+	BOOL retVal = 0;
+	retVal = DeleteHeap(uc, lpAddress, dwSize);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuVirtualFreeEx(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hProcess = 0;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD dwFreeType = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hProcess
+	hProcess = getDWORD(uc, sp);
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp + 4);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 8);
+
+	//Get flAllocationType
+	dwFreeType = getDWORD(uc, sp + 12);
+
+	//Print arguments
+	_stprintf(buffer, "(hProcess=0x%lX, lpAddress=0x%lX, dwSize=0x%lX, dwFreeType=0x%lX)\n", hProcess, lpAddress, dwSize, dwFreeType);
+	UcPrintAPIArg(buffer, tab);
+
+	//Free memory
+	BOOL retVal = 0;
+	
+	if (hProcess == loadedDll[_fileName])
+		retVal = DeleteHeap(uc, lpAddress, dwSize);
+	else
+		retVal = VirtualFreeEx((HANDLE)hProcess, (LPVOID)lpAddress, dwSize, dwFreeType);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 4;
+}
+
+void EmuVirtualProtect(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD flNewProtect = 0;
+	DWORD lpflOldProtect = 0;
+	TCHAR pageAccess[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 4);
+
+	//Get flNewProtect
+	flNewProtect = getDWORD(uc, sp + 8);
+	getPageAccess(pageAccess, flNewProtect);
+
+	//Get lpflOldProtect
+	lpflOldProtect = getDWORD(uc, sp + 12);
+
+	//Print arguments
+	_stprintf(buffer, "(lpAddress=0x%lX, dwSize=0x%lX, flNewProtect=%s, lpflOldProtect=0x%lX)\n", lpAddress, dwSize, pageAccess, lpflOldProtect);
+	UcPrintAPIArg(buffer, tab);
+
+	//Always return TRUE
+	BOOL retVal = TRUE;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 4;
+}
+
+void EmuVirtualProtectEx(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hProcess = 0;
+	DWORD lpAddress = 0;
+	DWORD dwSize = 0;
+	DWORD flNewProtect = 0;
+	DWORD lpflOldProtect = 0;
+	TCHAR pageAccess[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hProcess
+	hProcess = getDWORD(uc, sp);
+
+	//Get lpAddress
+	lpAddress = getDWORD(uc, sp + 4);
+
+	//Get dwSize
+	dwSize = getDWORD(uc, sp + 8);
+
+	//Get flNewProtect
+	flNewProtect = getDWORD(uc, sp + 12);
+	getPageAccess(pageAccess, flNewProtect);
+
+	//Get lpflOldProtect
+	lpflOldProtect = getDWORD(uc, sp + 16);
+
+	//Print arguments
+	_stprintf(buffer, "(hProcess=0x%lX, lpAddress=0x%lX, dwSize=0x%lX, flNewProtect=%s, lpflOldProtect=0x%lX)\n", hProcess, lpAddress, dwSize, pageAccess, lpflOldProtect);
+	UcPrintAPIArg(buffer, tab);
+
+	//Change memory protection type
+	BOOL retVal = TRUE;
+	if (hProcess != loadedDll[_fileName] || hProcess != 0xffffffff)
+		retVal = VirtualProtectEx((HANDLE)hProcess, (LPVOID)lpAddress, dwSize, flNewProtect, &lpflOldProtect);
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 5;
+}
+
+void EmuWaitForSingleObject(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hHandle = 0;
+	DWORD dwMilliseconds = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hHandle
+	hHandle = getDWORD(uc, sp);
+
+	//Get dwMilliseconds
+	dwMilliseconds = getDWORD(uc, sp + 4);
+
+	//Print arguments
+	if (dwMilliseconds == 0xffffffff)
+		_stprintf(buffer, "(hHandle=0x%lX, dwMilliseconds=INFINITE)\n", hHandle);
+	else
+		_stprintf(buffer, "(hHandle=0x%lX, dwMilliseconds=0x%lX)\n", hHandle, dwMilliseconds);
+	UcPrintAPIArg(buffer, tab);
+
+	//Always return object is signaled
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 1;
+}
+
+void EmuWaitForSingleObjectEx(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD hHandle = 0;
+	DWORD dwMilliseconds = 0;
+	DWORD bAlertable = 0;
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get hHandle
+	hHandle = getDWORD(uc, sp);
+
+	//Get dwMilliseconds
+	dwMilliseconds = getDWORD(uc, sp + 4);
+
+	//Get bAlertable
+	bAlertable = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	if (dwMilliseconds == 0xffffffff)
+		_stprintf(buffer, "(hHandle=0x%lX, dwMilliseconds=INFINITE, bAlertable=0x%lX)\n", hHandle, bAlertable);
+	else
+		_stprintf(buffer, "(hHandle=0x%lX, dwMilliseconds=0x%lX, bAlertable=0x%lX)\n", hHandle, dwMilliseconds, bAlertable);
+	UcPrintAPIArg(buffer, tab);
+
+	//Always return object is signaled
+	DWORD retVal = 0;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 3;
+}
+
+void EmuWinExec(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD lpCmdLine = 0;
+	DWORD uCmdShow = 0;
+	TCHAR cmdLine[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get lpCmdLine
+	lpCmdLine = getDWORD(uc, sp);
+	getString(uc, lpCmdLine, cmdLine);
+
+	//Get uCmdShow
+	uCmdShow = getDWORD(uc, sp + 4);
+
+	//Print argument
+	_stprintf(buffer, "(lpCmdLine=&\"%s\", uCmdShow=0x%lX)\n", cmdLine, uCmdShow);
+	UcPrintAPIArg(buffer, tab);
+
+	//Return value must be greater than 31
+	DWORD retVal = 0xaa;
+
+	//Push return value back into Unicorn Engine
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Cleanup stack
+	_numberOfArguments = 2;
 }
