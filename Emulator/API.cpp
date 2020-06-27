@@ -42,8 +42,6 @@ void EmuFunc()
 	api[(TCHAR*)"ExitThread"] = EmuExitThread;
 	api[(TCHAR*)"FindClose"] = EmuFindClose;
 	api[(TCHAR*)"FindFirstFileA"] = EmuFindFirstFileA;
-	api[(TCHAR*)"FindFirstFileExA"] = EmuFindFirstFileExA;
-	api[(TCHAR*)"FindFirstFileExW"] = EmuFindFirstFileExW;
 	api[(TCHAR*)"FindFirstFileW"] = EmuFindFirstFileW;
 	api[(TCHAR*)"FindNextFileA"] = EmuFindNextFileA;
 	api[(TCHAR*)"FindNextFileW"] = EmuFindNextFileW;
@@ -56,6 +54,8 @@ void EmuFunc()
 	api[(TCHAR*)"GetCurrentProcessId"] = EmuGetCurrentProcessId;
 	api[(TCHAR*)"GetCurrentThread"] = EmuGetCurrentThread;
 	api[(TCHAR*)"GetCurrentThreadId"] = EmuGetCurrentThreadId;
+	api[(TCHAR*)"GetFileSize"] = EmuGetFileSize;
+	api[(TCHAR*)"GetFileSizeEx"] = EmuGetFileSizeEx;
 	api[(TCHAR*)"GetLastError"] = EmuGetLastError;
 	api[(TCHAR*)"GetModuleFileNameA"] = EmuGetModuleFileNameA;
 	api[(TCHAR*)"GetModuleFileNameW"] = EmuGetModuleFileNameW;
@@ -79,10 +79,13 @@ void EmuFunc()
 	api[(TCHAR*)"LoadLibraryA"] = EmuLoadLibraryA;
 	api[(TCHAR*)"LoadLibraryExA"] = EmuLoadLibraryExA;
 	api[(TCHAR*)"LoadLibraryExW"] = EmuLoadLibraryExW;
+	api[(TCHAR*)"MultiByteToWideChar"] = EmuMultiByteToWideChar;
 	api[(TCHAR*)"LoadLibraryW"] = EmuLoadLibraryW;
 	api[(TCHAR*)"OpenMutexA"] = EmuOpenMutexA;
 	api[(TCHAR*)"OpenMutexW"] = EmuOpenMutexW;
 	api[(TCHAR*)"QueryPerformanceCounter"] = EmuQueryPerformanceCounter;
+	api[(TCHAR*)"ReadFile"] = EmuReadFile;
+	api[(TCHAR*)"ReadFileEx"] = EmuReadFileEx;
 	api[(TCHAR*)"SetErrorMode"] = EmuSetErrorMode;
 	api[(TCHAR*)"SetLastError"] = EmuSetLastError;
 	api[(TCHAR*)"Sleep"] = EmuSleep;
@@ -95,5 +98,25 @@ void EmuFunc()
 	api[(TCHAR*)"VirtualProtectEx"] = EmuVirtualProtectEx;
 	api[(TCHAR*)"WaitForSingleObject"] = EmuWaitForSingleObject;
 	api[(TCHAR*)"WaitForSingleObjectEx"] = EmuWaitForSingleObjectEx;
+	api[(TCHAR*)"WideCharToMultiByte"] = EmuWideCharToMultiByte;
 	api[(TCHAR*)"WinExec"] = EmuWinExec;
+	api[(TCHAR*)"WriteFile"] = EmuWriteFile;
+	api[(TCHAR*)"WriteFileEx"] = EmuWriteFileEx;
+
+	//Ntdll.dll
+
+
+	//Msvcrt.dll
+	api[(TCHAR*)"__acrt_iob_func"] = Emu__acrt_iob_func;
+	api[(TCHAR*)"__getmainargs"] = Emu__getmainargs;
+	api[(TCHAR*)"__p___argc"] = Emu__p___argc;
+	api[(TCHAR*)"__p___argv"] = Emu__p___argv;
+	api[(TCHAR*)"__p___initenv"] = Emu__p___initenv;
+	api[(TCHAR*)"__p___wargc"] = Emu__p___wargc;
+	api[(TCHAR*)"__p___wargv"] = Emu__p___wargv;
+	api[(TCHAR*)"__stdio_common_vfprintf"] = Emu__stdio_common_vfprintf;
+	api[(TCHAR*)"__wgetmainargs"] = Emu__wgetmainargs;
+	api[(TCHAR*)"_exit"] = Emu_exit;
+	api[(TCHAR*)"exit"] = Emuexit;
+	api[(TCHAR*)"printf"] = Emuprintf;
 }

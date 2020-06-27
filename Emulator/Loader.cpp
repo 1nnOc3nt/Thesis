@@ -26,7 +26,7 @@ Loader::Loader(TCHAR* filePath, TCHAR* arg)
 	time_t my_time = time(NULL);
 	tm* ltm = localtime(&my_time);
 
-	strcat(temp, _fileName);
+	strcat(temp, _filePath);
 	PathRemoveExtension(temp);
 	_stprintf(fileName, "%s_%d_%d_%d_%d_%d_%d.txt", temp, ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
 

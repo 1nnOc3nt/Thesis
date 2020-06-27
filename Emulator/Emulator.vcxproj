@@ -165,6 +165,8 @@
     <ClCompile Include="Hook.cpp" />
     <ClCompile Include="Kernel.cpp" />
     <ClCompile Include="Loader.cpp" />
+    <ClCompile Include="Msvcrt.cpp" />
+    <ClCompile Include="Ntdll.cpp" />
     <ClCompile Include="PE.cpp" />
     <ClCompile Include="TIB.cpp" />
     <ClCompile Include="Utils.cpp" />
@@ -181,6 +183,8 @@
     <ClInclude Include="Header.h" />
     <ClInclude Include="Kernel.h" />
     <ClInclude Include="Loader.h" />
+    <ClInclude Include="Msvcrt.h" />
+    <ClInclude Include="Ntdll.h" />
     <ClInclude Include="PE.h" />
     <ClInclude Include="TIB.h" />
     <ClInclude Include="Utils.h" />

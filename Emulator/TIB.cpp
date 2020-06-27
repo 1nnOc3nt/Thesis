@@ -49,7 +49,7 @@ void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg
 
 	//ImagePath
 	len = mbstowcs(imagePathW, imagePath, strlen(imagePath));
-	maxLen = len + 4;
+	maxLen = len + 2;
 
 	err = uc_mem_write(uc, address + 0x38, &len, sizeof(WORD));
 	if (err != UC_ERR_OK)
@@ -63,7 +63,7 @@ void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
-	err = uc_mem_write(uc, stringAddress, imagePathW, (len+1)*2);
+	err = uc_mem_write(uc, stringAddress, imagePathW, len*2);
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 
@@ -73,7 +73,7 @@ void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg
 	//CommandLine
 	if (arg == NULL)
 	{
-		err = uc_mem_write(uc, stringAddress, imagePathW, (len+1)*2);
+		err = uc_mem_write(uc, stringAddress, imagePathW, len*2);
 		if (err != UC_ERR_OK)
 			HandleUcErrorVoid(err);
 	}
@@ -81,7 +81,7 @@ void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg
 	{
 		sprintf(commandLine, "%s %s", imagePath, arg);
 		len = mbstowcs(commandLineW, commandLine, strlen(commandLine));
-		maxLen = len + 4;
+		maxLen = len + 2;
 
 		err = uc_mem_write(uc, address + 0x40, &len, sizeof(WORD));
 		if (err != UC_ERR_OK)
@@ -95,7 +95,7 @@ void InitProcessParam(uc_engine* uc, DWORD address, TCHAR* imagePath, TCHAR* arg
 		if (err != UC_ERR_OK)
 			HandleUcErrorVoid(err);
 
-		err = uc_mem_write(uc, stringAddress, commandLine, (len+1)*2);
+		err = uc_mem_write(uc, stringAddress, commandLineW, len*2);
 		if (err != UC_ERR_OK)
 			HandleUcErrorVoid(err);
 	}

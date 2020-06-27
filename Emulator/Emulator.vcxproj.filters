@@ -57,6 +57,12 @@
     <ClCompile Include="Fiber.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Ntdll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Msvcrt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Emulator.h">
@@ -99,6 +105,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Fiber.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ntdll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Msvcrt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

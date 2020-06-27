@@ -318,7 +318,7 @@ void getString(uc_engine* uc, DWORD address, TCHAR cString[])
 			return;
 		}
 
-		if (character == 0)
+		if (character == 0 || character == 10 || character == 13)
 			break;
 		else if (character < 32 || character >= 127)
 		{
@@ -358,7 +358,7 @@ void getStringW(uc_engine* uc, DWORD address, TCHAR cString[])
 			return;
 		}
 
-		if (character == 0 && characterNull == 0)
+		if ((character == 0 && characterNull == 0) || (character == 10 && characterNull == 0) || character == 13 && characterNull == 0)
 			break;
 		else if (character < 32 || character >= 127 || characterNull != 0)
 		{
