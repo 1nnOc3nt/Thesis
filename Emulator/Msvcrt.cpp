@@ -77,9 +77,6 @@ void getArg(uc_engine* uc, BOOL isW)
 			err = uc_mem_write(uc, _argv, &cmdAddress, sizeof(DWORD));
 			if (err != UC_ERR_OK)
 				HandleUcErrorVoid(err);
-			err = uc_mem_write(uc, _argv + 4, &cmdAddress, sizeof(DWORD));
-			if (err != UC_ERR_OK)
-				HandleUcErrorVoid(err);
 			err = uc_mem_write(uc, cmdAddress, cmdLine, argvLen);
 			if (err != UC_ERR_OK)
 				HandleUcErrorVoid(err);
