@@ -28,7 +28,7 @@ void getArg(uc_engine* uc, BOOL isW)
 		{
 			DWORD cmdAddress = cmd + (strlen(imagePath) + 1) * 2;
 			_argv = NewHeap(uc, 0xc);
-			err = uc_mem_write(uc, _argv, &cmdAddress, sizeof(DWORD));
+			err = uc_mem_write(uc, _argv, &cmd, sizeof(DWORD));
 			if (err != UC_ERR_OK)
 				HandleUcErrorVoid(err);
 			err = uc_mem_write(uc, _argv + 4, &cmdAddress, sizeof(DWORD));
@@ -38,11 +38,15 @@ void getArg(uc_engine* uc, BOOL isW)
 		else
 		{
 			DWORD argvLen = strlen(cmdLine) - strlen(imagePath) -1;
-			_argv = NewHeap(uc, argvLen);
+			_argv = NewHeap(uc, strlen(cmdLine));
 			DWORD cmdAddress = _argv + 8;
 			err = uc_mem_write(uc, _argv, &cmdAddress, sizeof(DWORD));
 			if (err != UC_ERR_OK)
 				HandleUcErrorVoid(err);
+			err = uc_mem_write(uc, cmdAddress, imagePath, strlen(imagePath));
+			if (err != UC_ERR_OK)
+				HandleUcErrorVoid(err);
+			cmdAddress += strlen(imagePath) + 1;
 			err = uc_mem_write(uc, _argv + 4, &cmdAddress, sizeof(DWORD));
 			if (err != UC_ERR_OK)
 				HandleUcErrorVoid(err);
@@ -168,13 +172,20 @@ void Emu__p___argc(uc_engine* uc, DWORD tab)
 void Emu__p___argv(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
+	DWORD sp = 0;
 
 	//Get arguments
 	if (_argc == 0)
 		getArg(uc);
 
+	//Push argc in to stack
+	sp = _stackAddr - _stackSize + 8;
+	err = uc_mem_write(uc, sp, &_argv, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
 	//Push return value back into Unicorn Engine
-	err = uc_reg_write(uc, UC_X86_REG_EAX, &_argv);
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &sp);
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
 }
