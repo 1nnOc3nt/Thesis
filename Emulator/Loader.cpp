@@ -28,7 +28,7 @@ Loader::Loader(TCHAR* filePath, TCHAR* arg)
 
 	strcat(temp, _filePath);
 	PathRemoveExtension(temp);
-	_stprintf(fileName, "%s_%d_%d_%d_%d_%d_%d.txt", temp, ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
+	_stprintf(fileName, "%s_%02d-%02d-%04d_%02d-%02d-%02d.xml", temp, ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year, ltm->tm_hour, ltm->tm_min, ltm->tm_sec);
 
 	_outFile = CreateFile(fileName, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 

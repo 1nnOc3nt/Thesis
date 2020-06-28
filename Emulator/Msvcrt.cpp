@@ -87,6 +87,7 @@ void Emu__acrt_iob_func(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
 	DWORD retVal = 0;
+
 	//Push return value back into Unicorn Engine
 	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
 	if (err != UC_ERR_OK)
@@ -133,7 +134,7 @@ void Emu__getmainargs(uc_engine* uc, DWORD tab)
 	_DoWildCard = getDWORD(uc, sp + 12);
 
 	//Print argument
-	_stprintf(buffer, "(_Argc=0x%lX, _Argv=0x%lX, _Env=0x%lX, _DoWildCard=0x%lX)\n", _Argc, _Argv, _Env, _DoWildCard);
+	_stprintf(buffer, "(_Argc=0x%lX, _Argv=0x%lX, _Env=0x%lX, _DoWildCard=0x%lX)", _Argc, _Argv, _Env, _DoWildCard);
 	UcPrintAPIArg(buffer, tab);
 
 	DWORD retVal = 0;

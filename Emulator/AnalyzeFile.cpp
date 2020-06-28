@@ -13,9 +13,11 @@ int AnalyzeFile::StartAnalyze()
 {
 	uc_err err;
 	TCHAR buffer[MAX_PATH] = { 0 };
-	
-	_stprintf(buffer, "[*] Analyzing: %s\n", filePath);
+
+	_stprintf(buffer, "<EmuLogs>\n");
 	UcPrint(buffer);
+	//_stprintf(buffer, "<PEFile filePath=\"%s\" />\n", filePath);
+	//UcPrint(buffer);
 
 	if (strstr(mode, "a") != NULL)
 		_printAsm = TRUE;
@@ -36,7 +38,7 @@ int AnalyzeFile::StartAnalyze()
 		HandleUcError(err);
 
 
-	strcat(buffer, "[*] Done!\n");
+	_stprintf(buffer, "</EmuLogs>\n");
 	UcPrint(buffer);
 	return 0;
 }

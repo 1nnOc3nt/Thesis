@@ -53,17 +53,30 @@ do\
 	ZeroMemory(buffer, MAX_PATH);\
 } while(0)
 
-#define UcPrintAPIArg(buffer, tab)\
-do\
-{\
-	if (tab > 0)\
-	{\
-		for (int j = 0; j < tab; j++)\
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);\
-	}\
-	WriteFile(_outFile, buffer, strlen(buffer), &_dwBytesWritten, NULL);\
-	ZeroMemory(buffer, MAX_PATH);\
-} while(0)
+void UcPrintAPIArg(TCHAR buffer[], DWORD tab);
+//do\
+//{\
+//	if (tab > 0)\
+//	{\
+//		for (int j = 0; j < tab; j++)\
+//			WriteFile(_outFile, "\t", 1, &_dwBytesWritten, NULL);\
+//	}\
+//	WriteFile(_outFile, "\t<arguments>\n", strlen("\t<arguments>\n"), &_dwBytesWritten, NULL);\
+//	\
+//	if (tab > 0)\
+//	{\
+//		for (int j = 0; j < tab; j++)\
+//			WriteFile(_outFile, "\t", 1, &_dwBytesWritten, NULL);\
+//	}\
+//	WriteFile(_outFile, "\t\t", strlen("\t\t"), &_dwBytesWritten, NULL);\
+//	if (tab > 0)\
+//	{\
+//		for (int j = 0; j < tab; j++)\
+//			WriteFile(_outFile, "\t", 1, &_dwBytesWritten, NULL);\
+//	}\
+//	WriteFile(_outFile, buffer, strlen(buffer), &_dwBytesWritten, NULL);\
+//	ZeroMemory(buffer, MAX_PATH);\
+//} while(0)
 
 DWORD getEAX(uc_engine* uc);
 DWORD getEBX(uc_engine* uc);

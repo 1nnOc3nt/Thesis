@@ -1,5 +1,11 @@
 #include "Utils.h"
 
+void UcPrintAPIArg(TCHAR buffer[], DWORD tab)
+{
+	WriteFile(_outFile, buffer, strlen(buffer), &_dwBytesWritten, NULL);
+	ZeroMemory(buffer, MAX_PATH); 
+}
+
 DWORD getEAX(uc_engine* uc)
 {
 	uc_err err;
@@ -76,18 +82,11 @@ void getRegistries(uc_engine* uc, DWORD tab)
 	TCHAR regStringW[MAX_PATH] = { 0 };
 	TCHAR buffer[MAX_PATH] = { 0 };
 
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
-	WriteFile(_outFile, "-----------------Registries------------\n", strlen("-----------------Registries------------\n"), &_dwBytesWritten, NULL);
+	char total_tab[100] = { 0 };
+	memset(total_tab, '\t', tab);
 
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
+	WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+	WriteFile(_outFile, "<Registries>\n", strlen("<Registries>\n"), &_dwBytesWritten, NULL);
 
 	DWORD eax = getEAX(uc);
 	getString(uc, eax, regString);
@@ -95,197 +94,259 @@ void getRegistries(uc_engine* uc, DWORD tab)
 
 	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  EAX = 0x%lX -> %s\n", eax, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<eax value=0x%lX>\n", eax);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</eax>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  EAX = 0x%lX -> %s\n", eax, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<eax value=0x%lX>\n", eax);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</eax>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  EAX = 0x%lX\n", eax);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<eax value=0x%lX />\n", eax);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD ebx = getEBX(uc);
 	getString(uc, ebx, regString);
 	getStringW(uc, ebx, regStringW);
 
-	if ((strcmp(regString, "") != 0 )&& strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  EBX = 0x%lX -> %s\n", ebx, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebx value=0x%lX>\n", ebx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ebx>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  EBX = 0x%lX -> %s\n", ebx, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebx value=0x%lX>\n", ebx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ebx>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  EBX = 0x%lX\n", ebx);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebx value=0x%lX />\n", ebx);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD ecx = getECX(uc);
 	getString(uc, ecx, regString);
 	getStringW(uc, ecx, regStringW);
 
-	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  ECX = 0x%lX -> %s\n", ecx, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ecx value=0x%lX>\n", ecx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ecx>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  ECX = 0x%lX -> %s\n", ecx, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ecx value=0x%lX>\n", ecx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ecx>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  ECX = 0x%lX\n", ecx);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ecx value=0x%lX />\n", ecx);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD edx = getEDX(uc);
 	getString(uc, edx, regString);
 	getStringW(uc, edx, regStringW);
-
-	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  EDX = 0x%lX -> %s\n", edx, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edx value=0x%lX>\n", edx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</edx>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  EDX = 0x%lX -> %s\n", edx, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edx value=0x%lX>\n", edx);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</edx>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  EDX = 0x%lX\n", edx);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edx value=0x%lX />\n", edx);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD ebp = getEBP(uc);
 	getString(uc, ebp, regString);
 	getStringW(uc, ebp, regStringW);
 
-	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  EBP = 0x%lX -> %s\n", ebp, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebp value=0x%lX>\n", ebp);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ebp>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  EBP = 0x%lX -> %s\n", ebp, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebp value=0x%lX>\n", ebp);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</ebp>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  EBP = 0x%lX\n", ebp);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<ebp value=0x%lX />\n", ebp);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD esi = getESI(uc);
 	getString(uc, esi, regString);
 	getStringW(uc, esi, regStringW);
 
-	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  ESI = 0x%lX -> %s\n", esi, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esi value=0x%lX>\n", esi);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</esi>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  ESI = 0x%lX -> %s\n", esi, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esi value=0x%lX>\n", esi);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</esi>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  ESI = 0x%lX\n", esi);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esi value=0x%lX />\n", esi);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
-
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
 
 	DWORD edi = getEDI(uc);
 	getString(uc, edi, regString);
 	getStringW(uc, edi, regStringW);
-
-	if ((strcmp(regString, "") != 0 ) && strlen(regString) >= 2)
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
 	{
-		_stprintf(buffer, "  EDI = 0x%lX -> %s\n", edi, regString);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edi value=0x%lX>\n", edi);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</edi>\n");
 		UcPrint(buffer);
 	}
 	else if (strcmp(regStringW, ""))
 	{
-		_stprintf(buffer, "  EDI = 0x%lX -> %s\n", edi, regStringW);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edi value=0x%lX>\n", edi);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</edi>\n");
 		UcPrint(buffer);
 	}
 	else
 	{
-		_stprintf(buffer, "  EDI = 0x%lX\n", edi);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<edi value=0x%lX />\n", edi);
 		UcPrint(buffer);
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
 
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
-
-	WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+	WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+	WriteFile(_outFile, "</Registries>\n", strlen("</Registries>\n"), &_dwBytesWritten, NULL);
 }
 
 void CleanupStack(uc_engine* uc, DWORD number)
@@ -389,6 +450,8 @@ void getStack(uc_engine* uc, DWORD tab)
 {
 	uc_err err;
 	DWORD sp = 0;
+	char total_tab[100] = { 0 };
+	memset(total_tab, '\t', tab);
 
 	//Get stack pointer
 	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
@@ -397,11 +460,8 @@ void getStack(uc_engine* uc, DWORD tab)
 
 	sp += 4;
 
-	if (tab > 0)
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-
-	WriteFile(_outFile, "-----------------Stack-----------------\n", strlen("-----------------Stack-----------------\n"), &_dwBytesWritten, NULL);
+	WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+	WriteFile(_outFile, "<Stack>\n", strlen("<Stack>\n"), &_dwBytesWritten, NULL);
 
 	for (size_t i = 0; i < 5; i++)
 	{
@@ -420,18 +480,34 @@ void getStack(uc_engine* uc, DWORD tab)
 			getStringW(uc, stackValue, stackValueStringW);
 		}
 
-		if (tab > 0)
-			for (int j = 0; j < tab; j++)
-				WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-
 		if (strcmp(stackValueString, "") && strlen(stackValueString) >= 2)
 		{
-			_stprintf(buffer, "Arg[%d]: 0x%lX  -> %s\n", i + 1, stackValue, stackValueString);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t<argument index=%d value=0x%lX>\n", i + 1, stackValue);
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t\t<string value=\"%s\" />\n", stackValueString);
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t</argument>\n");
 			UcPrint(buffer);
 		}
 		else if (strcmp(stackValueStringW, ""))
 		{
-			_stprintf(buffer, "Arg[%d]: 0x%lX -> 0x%lX -> %s\n", i + 1, stackValue, dwStackValue, stackValueStringW);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t<argument index=%d value=0x%lX>\n", i + 1, stackValue);
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t\t<dword value=0x%lX>\n", dwStackValue);
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t\t\t<string value=\"%s\" />\n", stackValueStringW);
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t\t<dword>\n");
+			UcPrint(buffer);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t</argument>\n");
 			UcPrint(buffer);
 		}
 		else if (dwStackValue != 0)
@@ -440,33 +516,64 @@ void getStack(uc_engine* uc, DWORD tab)
 			getStringW(uc, dwStackValue, stackValueStringW);
 			if (strcmp(stackValueString, "") && strlen(stackValueString) >= 2)
 			{
-				_stprintf(buffer, "Arg[%d]: 0x%lX -> 0x%lX -> %s\n", i + 1, stackValue, dwStackValue, stackValueString);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t<argument index=%d value=0x%lX>\n", i + 1, stackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t<dword value=0x%lX>\n", dwStackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t\t<string value=\"%s\" />\n", stackValueString);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t<dword>\n");
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t</argument>\n");
 				UcPrint(buffer);
 			}
 			else if (strcmp(stackValueStringW, ""))
 			{
-				_stprintf(buffer, "Arg[%d]: 0x%lX -> 0x%lX -> %s\n", i + 1, stackValue, dwStackValue, stackValueStringW);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t<argument index=%d value=0x%lX>\n", i + 1, stackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t<dword value=0x%lX>\n", dwStackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t\t<string value=\"%s\" />\n", stackValueStringW);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t<dword>\n");
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t</argument>\n");
 				UcPrint(buffer);
 			}
 			else
 			{
-				_stprintf(buffer, "Arg[%d]: 0x%lX -> 0x%lX\n", i + 1, stackValue, dwStackValue);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t<argument index=%d value=0x%lX>\n", i + 1, stackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t\t<dword value=0x%lX />\n", dwStackValue);
+				UcPrint(buffer);
+				WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+				_stprintf(buffer, "\t</argument>\n");
 				UcPrint(buffer);
 			}
 		}
 		else
 		{
-			_stprintf(buffer, "Arg[%d]: 0x%lX\n", i + 1, stackValue);
+			WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+			_stprintf(buffer, "\t<argument index=%d value=0x%lX />\n", i + 1, stackValue);
 			UcPrint(buffer);
 		}
 		
 		sp += 4;
 	}
-	if (tab > 0)
-	{
-		for (int j = 0; j < tab; j++)
-			WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-	}
+	WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+	WriteFile(_outFile, "</Stack>\n", strlen("</Stack>\n"), &_dwBytesWritten, NULL);
 }
 
 void getGeneric(TCHAR genericAccess[], DWORD dwDesiredAccess)

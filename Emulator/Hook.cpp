@@ -14,6 +14,10 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 	size_t count = 0;
 	uint8_t* code = new uint8_t[size];
 	ZeroMemory(code, size);
+
+	char total_tab[100] = { 0 };
+	memset(total_tab, '\t', _tabSize);
+
 	uc_err err = uc_mem_read(uc, address, code, size);
 	if (err != UC_ERR_OK)
 		HandleUcErrorVoid(err);
@@ -49,14 +53,19 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 
 					if (!strcmp(_cache.mnemonic, "call"))
 					{
-						for (int j = 0; j < _tabSize - 1; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 
-						for (int j = 0; j < _tabSize - 1; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "<Address value=0x%llX>\n", _cache.address);
 						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t<CallApi name=\"%s\">\n", symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize -1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t\t%s", symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
+						
 						iterate = api.begin();
 						while (iterate != api.end())
 						{
@@ -67,20 +76,30 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 							iterate++;
 						}
 
-						for (int j = 0; j < _tabSize - 1; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t</CallApi>\n");
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "</Address>\n");
+						UcPrint(buffer);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 					else
 					{
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, symbols[(DWORD)insn[i].address]);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "<Address value=0x%llX>\n", _cache.address);
 						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t<JmpApi name=\"%s\" >\n", symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t\t%s", symbols[(DWORD)insn[i].address]);
+						UcPrint(buffer);
+
 						iterate = api.begin();
 						while (iterate != api.end())
 						{
@@ -91,9 +110,14 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 							iterate++;
 						}
 
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t</JmpApi>\n");
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "</Address>\n");
+						UcPrint(buffer);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 				}
 				else
@@ -106,49 +130,49 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 						{
 							DWORD eax = 0;
 							eax = getEAX(uc);
-							_stprintf(tempCache, "eax -> 0x%lX", eax);
+							_stprintf(tempCache, "<eax value=0x%lX />", eax);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "ebx"))
 						{
 							DWORD ebx = 0;
 							ebx = getEBX(uc);
-							_stprintf(tempCache, "ebx -> 0x%lX", ebx);
+							_stprintf(tempCache, "<ebx value=0x%lX />", ebx);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "ecx"))
 						{
 							DWORD ecx = 0;
 							ecx = getECX(uc);
-							_stprintf(tempCache, "ecx -> 0x%lX", ecx);
+							_stprintf(tempCache, "<ecx value=0x%lX />", ecx);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "edx"))
 						{
 							DWORD edx = 0;
 							edx = getEDX(uc);
-							_stprintf(tempCache, "edx -> 0x%lX", edx);
+							_stprintf(tempCache, "<edx value=0x%lX />", edx);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "ebp"))
 						{
 							DWORD ebp = 0;
 							ebp = getEBP(uc);
-							_stprintf(tempCache, "ebp -> 0x%lX", ebp);
+							_stprintf(tempCache, "<ebp value=0x%lX />", ebp);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "esi"))
 						{
 							DWORD esi = 0;
 							esi = getESI(uc);
-							_stprintf(tempCache, "esi -> 0x%lX", esi);
+							_stprintf(tempCache, "<esi value=0x%lX />", esi);
 							_cache.op_str = tempCache;
 						}
 						else if (!strcmp(_cache.op_str, "edi"))
 						{
 							DWORD edi = 0;
 							edi = getEDI(uc);
-							_stprintf(tempCache, "edi -> 0x%lX", edi);
+							_stprintf(tempCache, "<edi value=0x%lX />", edi);
 							_cache.op_str = tempCache;
 						}
 					}
@@ -156,33 +180,47 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 					if (!strcmp(_cache.mnemonic, "call"))
 					{
 						getStack(uc, _tabSize - 1);
-						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "<Address value=0x%llX>\n", _cache.address);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t<instruction value=\"%s %s\" />\n", _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize - 1, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "</Address>\n");
 						UcPrint(buffer);
 
-						for (int j = 0; j < _tabSize - 1; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 					else if (!strcmp(_cache.mnemonic, "jmp"))
 					{
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-
-						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "<Address value=0x%llX>\n", _cache.address);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t<instruction value=\"%s %s\" />\n", _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "</Address>\n");
 						UcPrint(buffer);
 
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						//WriteFile(_outFile, "---------------------------------------\n", strlen("---------------------------------------\n"), &_dwBytesWritten, NULL);
 					}
 					else
 					{
-						for (int j = 0; j < _tabSize; j++)
-							WriteFile(_outFile, "   |   ", strlen("   |   "), &_dwBytesWritten, NULL);
-						_stprintf(buffer, "0x%llX: %s %s\n", _cache.address, _cache.mnemonic, _cache.op_str);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "<Address value=0x%llX>\n", _cache.address);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "\t<instruction value=\"%s %s\" />\n", _cache.mnemonic, _cache.op_str);
+						UcPrint(buffer);
+						WriteFile(_outFile, total_tab, _tabSize, &_dwBytesWritten, NULL);
+						_stprintf(buffer, "</Address>\n");
 						UcPrint(buffer);
 					}
 				}
