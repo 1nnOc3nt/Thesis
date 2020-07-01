@@ -119,4 +119,18 @@ void EmuFunc()
 	api[(TCHAR*)"_exit"] = Emu_exit;
 	api[(TCHAR*)"exit"] = Emuexit;
 	api[(TCHAR*)"printf"] = Emuprintf;
+
+	//ws2_32.dll
+	api[(TCHAR*)"accept"] = Emuaccept;
+	api[(TCHAR*)"connect"] = Emuconnect;
+	api[(TCHAR*)"closesocket"] = Emuclosesocket;
+	api[(TCHAR*)"recv"] = Emurecv;
+	api[(TCHAR*)"send"] = Emusend;
+	api[(TCHAR*)"socket"] = Emusocket;
+	api[(TCHAR*)"WSACleanup"] = EmuWSACleanup;
+	api[(TCHAR*)"WSAGetLastError"] = EmuWSAGetLastError;
+	api[(TCHAR*)"WSASetLastError"] = EmuWSASetLastError;
+	api[(TCHAR*)"WSASocketA"] = EmuWSASocket;
+	api[(TCHAR*)"WSASocketW"] = EmuWSASocket;
+	api[(TCHAR*)"WSAStartup"] = EmuWSAStartup;
 }

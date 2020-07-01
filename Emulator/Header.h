@@ -1,6 +1,8 @@
 #pragma once
 #define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <iostream>
+#include <winsock2.h>
 #include <windows.h>
 #include <Shlwapi.h>
 #include <tchar.h>
@@ -13,6 +15,7 @@
 #pragma comment (lib, "unicorn.lib")
 #pragma comment (lib, "capstone_dll.lib")
 #pragma comment (lib, "shlwapi.lib")
+#pragma comment(lib, "ws2_32.lib")
 
 using namespace std;
 
