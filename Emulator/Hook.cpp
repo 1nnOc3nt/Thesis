@@ -154,6 +154,13 @@ void hook_code(uc_engine* uc, uint64_t address, uint32_t size, void* user_data)
 							_stprintf(tempCache, "<edx value=0x%lX />", edx);
 							_cache.op_str = tempCache;
 						}
+						else if (!strcmp(_cache.op_str, "esp"))
+						{
+							DWORD esp = 0;
+							esp = getESP(uc);
+							_stprintf(tempCache, "<esp value=0x%lX />", esp);
+							_cache.op_str = tempCache;
+						}
 						else if (!strcmp(_cache.op_str, "ebp"))
 						{
 							DWORD ebp = 0;
