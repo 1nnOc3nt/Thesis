@@ -10,7 +10,8 @@ int _tmain(int argc, TCHAR* argv[])
 		emulator->StartAnalyze();
 		end_time = clock();
 		double time_taken = double(end_time - start_time) / double(CLOCKS_PER_SEC);
-		_stprintf(buffer, "\n[!] Total execution time: %fs", time_taken);
+		_tprintf("[!] Total execution time: %fs", time_taken);
+		_stprintf(buffer, "<ExecutionTime value=%fs>", time_taken);
 		UcPrint(buffer);
 		delete emulator;
 	}

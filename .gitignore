@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# additional
+*.ipch
+*.tlog
+*.iobj
+*.ipdb
+*.log
+*.lastbuildstate

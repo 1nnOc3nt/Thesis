@@ -46,6 +46,17 @@ DWORD getEDX(uc_engine* uc)
 	return edx;
 }
 
+DWORD getESP(uc_engine* uc)
+{
+	uc_err err;
+	DWORD esp = 0;
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &esp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorDWORD(err);
+	return esp;
+}
+
+
 DWORD getEBP(uc_engine* uc)
 {
 	uc_err err;
@@ -234,6 +245,44 @@ void getRegistries(uc_engine* uc, DWORD tab)
 	}
 	memset(regString, 0, MAX_PATH);
 	memset(regStringW, 0, MAX_PATH);
+
+	DWORD esp = getESP(uc);
+	getString(uc, esp, regString);
+	getStringW(uc, esp, regStringW);
+
+	if ((strcmp(regString, "") != 0) && strlen(regString) >= 2)
+	{
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esp value=0x%lX>\n", esp);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regString);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</esp>\n");
+		UcPrint(buffer);
+	}
+	else if (strcmp(regStringW, ""))
+	{
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esp value=0x%lX>\n", esp);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t\t<string value=\"%s\" />\n", regStringW);
+		UcPrint(buffer);
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t</esp>\n");
+		UcPrint(buffer);
+	}
+	else
+	{
+		WriteFile(_outFile, total_tab, tab, &_dwBytesWritten, NULL);
+		_stprintf(buffer, "\t<esp value=0x%lX />\n", esp);
+		UcPrint(buffer);
+	}
+	memset(regString, 0, MAX_PATH);
+	memset(regStringW, 0, MAX_PATH);
+
 
 	DWORD ebp = getEBP(uc);
 	getString(uc, ebp, regString);

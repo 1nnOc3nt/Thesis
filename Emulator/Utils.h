@@ -82,6 +82,7 @@ DWORD getEAX(uc_engine* uc);
 DWORD getEBX(uc_engine* uc);
 DWORD getECX(uc_engine* uc);
 DWORD getEDX(uc_engine* uc);
+DWORD getESP(uc_engine * uc);
 DWORD getEBP(uc_engine* uc);
 DWORD getESI(uc_engine* uc);
 DWORD getEDI(uc_engine* uc);
