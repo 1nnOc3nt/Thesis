@@ -4,6 +4,15 @@ map<TCHAR*, Func>api;
 
 void EmuFunc()
 {
+	//Advapi.dll
+	api[(TCHAR*)"RegCloseKey"] = EmuRegCloseKey;
+	api[(TCHAR*)"RegCreateKeyA"] = EmuRegCreateKeyA;
+	api[(TCHAR*)"RegCreateKeyW"] = EmuRegCreateKeyW;
+	api[(TCHAR*)"RegDeleteKeyA"] = EmuRegDeleteKeyA;
+	api[(TCHAR*)"RegDeleteKeyW"] = EmuRegDeleteKeyW;
+	api[(TCHAR*)"RegDeleteValueA"] = EmuRegDeleteValueA;
+	api[(TCHAR*)"RegDeleteValueW"] = EmuRegDeleteValueW;
+
 	//Kernel32.dll
 	api[(TCHAR*)"CloseHandle"] = EmuCloseHandle;
 	api[(TCHAR*)"ConnectNamedPipe"] = EmuConnectNamedPipe;
@@ -104,7 +113,17 @@ void EmuFunc()
 	api[(TCHAR*)"WriteFileEx"] = EmuWriteFileEx;
 
 	//Ntdll.dll
-
+	api[(TCHAR*)"memcmp"] = Emumemcmp;
+	api[(TCHAR*)"memcpy"] = Emumemcpy;
+	api[(TCHAR*)"memset"] = Emumemset;
+	api[(TCHAR*)"strcat"] = Emustrcat;
+	api[(TCHAR*)"strcmp"] = Emustrcmp;
+	api[(TCHAR*)"strcpy"] = Emustrcpy;
+	api[(TCHAR*)"strlen"] = Emustrlen;
+	api[(TCHAR*)"wcscat"] = Emuwcscat;
+	api[(TCHAR*)"wcscmp"] = Emuwcscmp;
+	api[(TCHAR*)"wcscpy"] = Emuwcscpy;
+	api[(TCHAR*)"wcslen"] = Emuwcslen;
 
 	//Msvcrt.dll
 	api[(TCHAR*)"__acrt_iob_func"] = Emu__acrt_iob_func;
@@ -122,10 +141,14 @@ void EmuFunc()
 
 	//ws2_32.dll
 	api[(TCHAR*)"accept"] = Emuaccept;
+	api[(TCHAR*)"bind"] = Emubind;
 	api[(TCHAR*)"connect"] = Emuconnect;
 	api[(TCHAR*)"closesocket"] = Emuclosesocket;
+	api[(TCHAR*)"getsockopt"] = Emugetsockopt;
+	api[(TCHAR*)"listen"] = Emulisten;
 	api[(TCHAR*)"recv"] = Emurecv;
 	api[(TCHAR*)"send"] = Emusend;
+	api[(TCHAR*)"setsockopt"] = Emusetsockopt;
 	api[(TCHAR*)"socket"] = Emusocket;
 	api[(TCHAR*)"WSACleanup"] = EmuWSACleanup;
 	api[(TCHAR*)"WSAGetLastError"] = EmuWSAGetLastError;

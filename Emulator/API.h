@@ -1,5 +1,7 @@
 #pragma once
+#include "Advapi32.h"
 #include "Kernel.h"
+#include "Ntdll.h"
 #include "Msvcrt.h"
 #include "ws2_32.h"
 

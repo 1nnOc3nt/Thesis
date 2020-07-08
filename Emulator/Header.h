@@ -14,6 +14,7 @@
 
 #pragma comment (lib, "unicorn.lib")
 #pragma comment (lib, "capstone_dll.lib")
+#pragma comment(lib, "advapi32.lib")
 #pragma comment (lib, "shlwapi.lib")
 #pragma comment(lib, "ws2_32.lib")
 
@@ -27,3 +28,5 @@ extern DWORD _stackSize;
 extern DWORD _numberOfArguments;
 extern HANDLE _outFile;
 extern DWORD _dwBytesWritten;
+extern clock_t start_time;
+extern clock_t end_time;

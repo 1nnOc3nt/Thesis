@@ -4,8 +4,14 @@ int _tmain(int argc, TCHAR* argv[])
 {
 	if (argc >= 3 && (strstr(argv[1], "-f") != NULL))
 	{
+		TCHAR buffer[MAX_PATH] = { 0 };
+		start_time = clock();
 		AnalyzeFile* emulator = new AnalyzeFile(argv[1], argv[2], argv[3]);
 		emulator->StartAnalyze();
+		end_time = clock();
+		double time_taken = double(end_time - start_time) / double(CLOCKS_PER_SEC);
+		_stprintf(buffer, "\n[!] Total execution time: %fs", time_taken);
+		UcPrint(buffer);
 		delete emulator;
 	}
 	else if (argc >= 3 && !strcmp(argv[1], "-d"))

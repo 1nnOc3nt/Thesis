@@ -342,6 +342,16 @@ void EmuCreateFile(uc_engine* uc, DWORD tab, TCHAR fileName[], TCHAR genericAcce
 	UcPrintAPIArg(buffer, tab);
 
 	//Call CreateFile and get return value
+	if (PathIsRelative(fileName))
+	{
+		TCHAR* tmp = new TCHAR[MAX_PATH];
+		ZeroMemory(tmp, MAX_PATH);
+		strcat(tmp, _fileDir);
+		strcat(tmp, fileName);
+		ZeroMemory(fileName, MAX_PATH);
+		strcat(fileName, tmp);
+		delete[] tmp;
+	}
 	DWORD retVal = (DWORD)CreateFile(fileName, dwDesiredAccess, dwShareMode, NULL, dwCreationDisposition, dwFlagsAndAttributes, NULL);
 
 	//Set last error
@@ -1413,9 +1423,12 @@ void EmuCreateThread(uc_engine* uc, DWORD tab)
 	lpThreadId = getDWORD(uc, sp + 20);
 	//Set lpThreadId
 	DWORD TID = 0xf;
-	err = uc_mem_write(uc, lpThreadId, &TID, sizeof(DWORD));
-	if (err != UC_ERR_OK)
-		HandleUcErrorVoid(err);
+	if (lpThreadId != 0)
+	{
+		err = uc_mem_write(uc, lpThreadId, &TID, sizeof(DWORD));
+		if (err != UC_ERR_OK)
+			HandleUcErrorVoid(err);
+	}
 
 	//Print arguments
 	_stprintf(buffer, "(lpThreadAttributes=0x%lX, dwStackSize=0x%lX, lpStartAddress=0x%lX, lpParameter=0x%lX, dwCreationFlags=%s, lpThreadId=0x%lX)\n",

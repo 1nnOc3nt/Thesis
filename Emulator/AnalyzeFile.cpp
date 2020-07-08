@@ -16,8 +16,6 @@ int AnalyzeFile::StartAnalyze()
 
 	_stprintf(buffer, "<EmuLogs>\n");
 	UcPrint(buffer);
-	//_stprintf(buffer, "<PEFile filePath=\"%s\" />\n", filePath);
-	//UcPrint(buffer);
 
 	if (strstr(mode, "a") != NULL)
 		_printAsm = TRUE;
@@ -40,6 +38,7 @@ int AnalyzeFile::StartAnalyze()
 
 	_stprintf(buffer, "</EmuLogs>\n");
 	UcPrint(buffer);
+
 	return 0;
 }
 

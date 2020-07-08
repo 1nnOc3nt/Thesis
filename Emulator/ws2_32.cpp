@@ -32,7 +32,75 @@ void Emuaccept(uc_engine* uc, DWORD tab)
 	UcPrintAPIArg(buffer, tab);
 
 	//Call accept
-	DWORD retVal = accept((SOCKET)s, (sockaddr*)NULL, NULL);
+	DWORD retVal = (DWORD)accept((SOCKET)s, (sockaddr*)NULL, NULL);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back to EAX
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	_numberOfArguments = 3;
+}
+
+void Emubind(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD s = 0;
+	DWORD name = 0;
+	DWORD namelen = 0;
+	SOCKADDR pSock;
+	WORD port = 0;
+	DWORD ip = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get s
+	s = getDWORD(uc, sp);
+
+	//Get name
+	name = getDWORD(uc, sp + 4);
+	err = uc_mem_read(uc, name, &pSock, sizeof(SOCKADDR));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	err = uc_mem_read(uc, name + 2, &port, sizeof(WORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	port = _byteswap_ushort(port);
+
+	err = uc_mem_read(uc, name + 4, &ip, sizeof(DWORD));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	ip = _byteswap_ulong(ip);
+
+	struct in_addr addr;
+	addr.s_addr = htonl(ip);
+	TCHAR* ipAddr = inet_ntoa(addr);
+
+	//Get namelen
+	namelen = getDWORD(uc, sp + 8);
+
+	//Print arguments
+	_stprintf(buffer, "(s=0x%lX, addr=0x%lX(%s:%d), namelen=0x%lX)\n", s, name, ipAddr, port, namelen);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call bind
+	DWORD retVal = bind((SOCKET)s, &pSock, namelen);
+	if (retVal == SOCKET_ERROR)
+		retVal = 0;
 
 	//Set last error
 	DWORD errorCode = GetLastError();
@@ -148,6 +216,108 @@ void Emuclosesocket(uc_engine* uc, DWORD tab)
 		HandleUcErrorVoid(err);
 
 	_numberOfArguments = 1;
+}
+
+void Emugetsockopt(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD s = 0;
+	DWORD level = 0;
+	DWORD optname = 0;
+	DWORD optval = 0;
+	DWORD optlen = 0;
+	DWORD iOptVal = 0;
+	int iOptLen = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get s
+	s = getDWORD(uc, sp);
+
+	//Get level
+	level = getDWORD(uc, sp + 4);
+
+	//Get optname
+	optname = getDWORD(uc, sp + 8);
+
+	//Get optval
+	optval = getDWORD(uc, sp + 12);
+
+	//Get optlen
+	optlen = getDWORD(uc, sp + 16);
+	iOptLen = getDWORD(uc, optlen);
+
+	//Print arguments
+	_stprintf(buffer, "(s=0x%lX, level=0x%lX, optname=0x%lX, optval=0x%lX, optlen=&0x%lX)\n", s, level, optname, optval, iOptLen);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call getsockopt
+	DWORD retVal = getsockopt((SOCKET)s, level, optname, (char*) &iOptVal, &iOptLen);
+	if (retVal == SOCKET_ERROR)
+		retVal = 0;
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Write optval
+	err = uc_mem_write(uc, optval, &iOptVal, sizeof(iOptVal));
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	//Push return value back to EAX
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	_numberOfArguments = 5;
+}
+
+void Emulisten(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD s = 0;
+	DWORD backlog = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get s
+	s = getDWORD(uc, sp);
+
+	//Get backlog
+	backlog = getDWORD(uc, sp + 4);
+
+	//Print arguments
+	_stprintf(buffer, "(s=0x%lX, backlog=0x%lX)\n", s, backlog);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call listen
+	DWORD retVal = listen(s, backlog);
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back to EAX
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	_numberOfArguments = 2;
 }
 
 void Emurecv(uc_engine* uc, DWORD tab)
@@ -266,6 +436,62 @@ void Emusend(uc_engine* uc, DWORD tab)
 
 	_numberOfArguments = 4;
 	delete b;
+}
+
+void Emusetsockopt(uc_engine* uc, DWORD tab)
+{
+	uc_err err;
+	DWORD s = 0;
+	DWORD level = 0;
+	DWORD optname = 0;
+	DWORD optval = 0;
+	DWORD optlen = 0;
+	DWORD bOptVal = 0;
+	TCHAR buffer[MAX_PATH] = { 0 };
+	DWORD sp = 0;
+
+	//Get stack pointer
+	err = uc_reg_read(uc, UC_X86_REG_ESP, &sp);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	sp += 4;
+
+	//Get s
+	s = getDWORD(uc, sp);
+
+	//Get level
+	level = getDWORD(uc, sp + 4);
+
+	//Get optname
+	optname = getDWORD(uc, sp + 8);
+
+	//Get optval
+	optval = getDWORD(uc, sp + 12);
+	bOptVal = getDWORD(uc, optlen);
+
+	//Get optlen
+	optlen = getDWORD(uc, sp + 16);
+
+	//Print arguments
+	_stprintf(buffer, "(s=0x%lX, level=0x%lX, optname=0x%lX, optval=&0x%lX, optlen=0x%lX)\n", s, level, optname, bOptVal, optlen);
+	UcPrintAPIArg(buffer, tab);
+
+	//Call setsockopt
+	DWORD retVal = setsockopt((SOCKET)s, level, optname, (char*)& bOptVal, optlen);
+	if (retVal == SOCKET_ERROR)
+		retVal = 0;
+
+	//Set last error
+	DWORD errorCode = GetLastError();
+	UcSetLastError(uc, errorCode);
+
+	//Push return value back to EAX
+	err = uc_reg_write(uc, UC_X86_REG_EAX, &retVal);
+	if (err != UC_ERR_OK)
+		HandleUcErrorVoid(err);
+
+	_numberOfArguments = 5;
 }
 
 void Emusocket(uc_engine* uc, DWORD tab)
